@@ -483,15 +483,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // 关闭弹窗：点击关闭按钮
   document.getElementById('shareClose').addEventListener('click', () => {
     document.getElementById('shareModal').style.display = 'none';
-    // 隐藏云端链接结果
-    document.getElementById('shareLinkResult').style.display = 'none';
   });
 
   // 关闭弹窗：点击背景遮罩
   document.getElementById('shareBackdrop').addEventListener('click', () => {
     document.getElementById('shareModal').style.display = 'none';
-    // 隐藏云端链接结果
-    document.getElementById('shareLinkResult').style.display = 'none';
   });
 
   // 下载图片：将 Canvas 导出为 PNG 并触发下载
@@ -504,112 +500,68 @@ document.addEventListener('DOMContentLoaded', () => {
     link.click();
   });
 
-  // 缓存当前卡片数据（供上传和分享使用）
+  // 缓存当前卡片数据
   let _shareData = null;
 
   // 云端 API 地址（部署后替换为 https://PinToken.ai）
-  const CLOUD_API = '';  // 空字符串表示云端未部署
+  const CLOUD_API = '';
 
-  // 上传到云端获取永久链接
-  document.getElementById('shareUpload').addEventListener('click', async () => {
-    const uploadBtn = document.getElementById('shareUpload');
-
-    if (!CLOUD_API) {
-      uploadBtn.textContent = '云端即将上线';
-      uploadBtn.disabled = true;
-      setTimeout(() => { uploadBtn.textContent = '上传获取链接'; uploadBtn.disabled = false; }, 2000);
-      return;
-    }
-
-    const canvas = document.querySelector('#sharePreview canvas');
-    if (!canvas || !_shareData) return;
-
-    uploadBtn.textContent = '上传中...';
-    uploadBtn.disabled = true;
-
+  /**
+   * 后台自动上传卡片到云端，返回卡片公开 URL
+   * 云端未部署时返回 null，分享降级为纯文字
+   */
+  async function uploadCardSilent() {
+    if (!CLOUD_API || !_shareData) return null;
     try {
-      // Canvas 转 base64（去掉 data:image/png;base64, 前缀）
+      const canvas = document.querySelector('#sharePreview canvas');
+      if (!canvas) return null;
       const imageData = canvas.toDataURL('image/png').split(',')[1];
-
       const res = await fetch(CLOUD_API + '/api/cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ..._shareData,
-          image_data: imageData,
-        }),
+        body: JSON.stringify({ ..._shareData, image_data: imageData }),
       });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.url;
+    } catch { return null; }
+  }
 
-      if (!res.ok) throw new Error('Upload failed');
-      const { url } = await res.json();
+  // 多平台分享（自动上传 → 带链接分享 → OG 图片自动展示）
 
-      // 显示链接
-      document.getElementById('shareLinkInput').value = url;
-      document.getElementById('shareLinkResult').style.display = 'flex';
-      uploadBtn.textContent = '已上传 ✓';
-    } catch (err) {
-      console.warn('[PinToken] upload failed:', err.message);
-      uploadBtn.textContent = '上传失败';
-    }
-
-    setTimeout(() => { uploadBtn.textContent = '上传获取链接'; uploadBtn.disabled = false; }, 3000);
-  });
-
-  // 复制链接
-  document.getElementById('shareLinkCopy').addEventListener('click', () => {
-    const input = document.getElementById('shareLinkInput');
-    navigator.clipboard.writeText(input.value).then(() => {
-      const btn = document.getElementById('shareLinkCopy');
-      btn.textContent = '已复制 ✓';
-      setTimeout(() => { btn.textContent = '复制'; }, 1500);
-    });
-  });
-
-  // 多平台分享（动态文案 + X 分享自动下载图片）
-
-  // 保存 share data 供分享按钮使用
-  const origShareClick = document.getElementById('shareBtn').onclick;
+  // 保存 share data
   document.getElementById('shareBtn').addEventListener('click', async () => {
     try {
       const res = await fetch('/api/share-data');
       if (res.ok) _shareData = await res.json();
     } catch {}
-  }, true); // capture phase，先于弹窗逻辑执行
+  }, true);
 
-  function getShareText() {
+  function getShareText(cardUrl) {
     const saved = _shareData ? '$' + _shareData.saved.toFixed(0) : 'money';
-    return `I saved ${saved} on AI APIs this month with PinToken!\nTrack your LLM spending → PinToken.ai\n#PinToken #AIcosts`;
+    const url = cardUrl || 'https://PinToken.ai';
+    return `I saved ${saved} on AI APIs this month with PinToken!\nTrack your LLM spending → ${url}\n#PinToken #AIcosts`;
   }
 
-  // 下载当前 Canvas 为 PNG
-  function downloadCardImage() {
-    const canvas = document.querySelector('#sharePreview canvas');
-    if (!canvas) return;
-    const link = document.createElement('a');
-    link.download = 'pintoken-savings.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }
-
+  // 点平台按钮：后台上传 → 用云端 URL 分享（含 OG 图片）
   document.querySelectorAll('.share-platform').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const platform = btn.dataset.platform;
-      const text = getShareText();
+
+      // 后台上传（云端部署后自动生效，未部署时降级为 PinToken.ai）
+      const cardUrl = await uploadCardSilent();
+      const text = getShareText(cardUrl);
+      const shareUrl = cardUrl || 'https://PinToken.ai';
       const encoded = encodeURIComponent(text);
-      const shareUrl = 'https://PinToken.ai';
       const encodedUrl = encodeURIComponent(shareUrl);
 
       if (platform === 'twitter') {
-        // 先下载图片，再打开推文编辑器（用户手动粘贴图片）
-        downloadCardImage();
-        setTimeout(() => {
-          window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
-        }, 500);
+        window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
         return;
       }
 
       if (platform === 'copy') {
-        navigator.clipboard.writeText(text + '\n' + shareUrl).then(() => {
+        navigator.clipboard.writeText(text).then(() => {
           btn.textContent = '✓';
           btn.style.color = 'var(--green)';
           btn.style.borderColor = 'var(--green)';
