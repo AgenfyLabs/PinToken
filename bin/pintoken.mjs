@@ -5,6 +5,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { runSetup } from '../src/setup/index.mjs';
 import { openBrowser } from '../src/setup/browser.mjs';
 import { startServer } from '../src/proxy/server.mjs'; // Task 8 实现，此处仅声明引用
+import { createStore, getDefaultDbPath } from '../src/db/store.mjs';
+import { renderStatusPanel } from '../src/cli/status.mjs';
 
 const VERSION = '0.1.0';
 const PORT = 7777;
@@ -38,6 +40,7 @@ PinToken v${VERSION} — 本地 LLM API 用量追踪代理
 命令:
   setup     初始化配置并启动代理服务器（默认）
   start     直接启动代理服务器（跳过配置写入）
+  status    显示终端用量状态面板
   --version 显示版本号
   --help    显示此帮助信息
 `);
@@ -82,6 +85,18 @@ async function main() {
     case 'start': {
       // 直接启动服务器，跳过配置写入
       await runServer();
+      break;
+    }
+
+    case 'status': {
+      // 只读数据库，打印状态面板后退出（不启动服务器）
+      const store = createStore(getDefaultDbPath());
+      try {
+        const data = store.getStatusData();
+        renderStatusPanel(data);
+      } finally {
+        store.close();
+      }
       break;
     }
 

@@ -1,6 +1,7 @@
 /**
- * OpenAI 代理转发处理器
- * 将客户端请求透明转发到 api.openai.com，并记录 token 用量和费用
+ * OpenAI 兼容格式代理转发处理器
+ * 支持 OpenAI 及所有 OpenAI 兼容格式的 Provider（xAI、Gemini、Moonshot、Qwen、GLM、Deepseek）
+ * 将客户端请求透明转发到目标 API，并记录 token 用量和费用
  */
 
 import https from 'node:https';
@@ -13,19 +14,20 @@ import { calculateCost } from '../pricing/calculator.mjs';
  * @param {object} params
  * @param {object} params.store - 数据库存储对象
  * @param {Function} params.onLog - 日志回调函数
+ * @param {string} params.provider - Provider 名称
  * @param {number} params.startTime - 请求开始时间戳（ms）
  * @param {number} params.statusCode - HTTP 响应状态码
  * @param {object|null} params.usage - 解析到的 token 用量信息
  */
-function recordRequest({ store, onLog, startTime, statusCode, usage }) {
+function recordRequest({ store, onLog, provider, startTime, statusCode, usage }) {
   // 解析失败时不记录
   if (!usage || !usage.model) return;
 
   const latency_ms = Date.now() - startTime;
 
-  // 计算费用（OpenAI 不支持缓存，cache 相关 token 始终为 0）
+  // 计算费用（OpenAI 兼容格式不支持缓存，cache 相关 token 始终为 0）
   const costInfo = calculateCost({
-    provider: 'openai',
+    provider,
     model: usage.model,
     input_tokens: usage.input_tokens,
     output_tokens: usage.output_tokens,
@@ -36,7 +38,7 @@ function recordRequest({ store, onLog, startTime, statusCode, usage }) {
   const record = {
     id: nanoid(),
     timestamp: new Date().toISOString(),
-    provider: 'openai',
+    provider,
     model: usage.model,
     input_tokens: usage.input_tokens,
     output_tokens: usage.output_tokens,
@@ -54,15 +56,28 @@ function recordRequest({ store, onLog, startTime, statusCode, usage }) {
 }
 
 /**
- * 处理 OpenAI 代理请求
+ * 处理 OpenAI 兼容格式的代理请求
  * @param {import('node:http').IncomingMessage} clientReq - 客户端请求
  * @param {import('node:http').ServerResponse} clientRes - 客户端响应
  * @param {object} store - 数据库存储对象
  * @param {Function} onLog - 日志回调，接收记录对象
+ * @param {object} options - Provider 配置
+ * @param {string} options.baseUrl - 目标 API 的完整 URL（如 https://api.openai.com/v1）
+ * @param {string} options.providerName - Provider 名称（如 "openai"、"xai"）
+ * @param {string} options.routePrefix - 路由前缀（如 "/openai"、"/xai"）
  */
-export function handleOpenAI(clientReq, clientRes, store, onLog) {
-  // 去掉 /openai 前缀，转发剩余路径
-  const targetPath = clientReq.url.replace(/^\/openai/, '') || '/';
+export function handleOpenAI(clientReq, clientRes, store, onLog, { baseUrl, providerName, routePrefix } = {}) {
+  // 默认值兼容原有调用方式
+  const provider = providerName || 'openai';
+  const prefix = routePrefix || '/openai';
+
+  // 解析目标 URL：去掉路由前缀，拼接到 baseUrl
+  const parsedBase = new URL(baseUrl || 'https://api.openai.com/v1');
+  const strippedPath = clientReq.url.replace(new RegExp(`^${prefix}`), '') || '/';
+  // 将 baseUrl 的 pathname 与剩余路径拼接（去掉末尾斜杠避免双斜杠）
+  const targetPath = parsedBase.pathname.replace(/\/$/, '') + strippedPath;
+  const targetHostname = parsedBase.hostname;
+
   const startTime = Date.now();
 
   // 读取客户端请求体
@@ -82,11 +97,11 @@ export function handleOpenAI(clientReq, clientRes, store, onLog) {
 
     // 构造转发请求头：复制原始头，覆盖 host
     const headers = Object.assign({}, clientReq.headers, {
-      host: 'api.openai.com',
+      host: targetHostname,
     });
 
     const options = {
-      hostname: 'api.openai.com',
+      hostname: targetHostname,
       port: 443,
       path: targetPath,
       method: clientReq.method,
@@ -112,7 +127,7 @@ export function handleOpenAI(clientReq, clientRes, store, onLog) {
           // 解析完整 SSE 内容，提取 token 用量
           const rawSSE = Buffer.concat(sseChunks).toString('utf-8');
           const usage = parseOpenAISSE(rawSSE);
-          recordRequest({ store, onLog, startTime, statusCode: proxyRes.statusCode, usage });
+          recordRequest({ store, onLog, provider, startTime, statusCode: proxyRes.statusCode, usage });
         });
       } else {
         // 非流式模式：收集完整响应体后一次性发送
@@ -133,14 +148,14 @@ export function handleOpenAI(clientReq, clientRes, store, onLog) {
           }
 
           const usage = parsed ? parseOpenAIResponse(parsed) : null;
-          recordRequest({ store, onLog, startTime, statusCode: proxyRes.statusCode, usage });
+          recordRequest({ store, onLog, provider, startTime, statusCode: proxyRes.statusCode, usage });
         });
       }
     });
 
     // 代理请求出错时返回 502
     proxyReq.on('error', (err) => {
-      console.error('[openai-proxy] 转发请求失败:', err.message);
+      console.error(`[${provider}-proxy] 转发请求失败:`, err.message);
 
       if (!clientRes.headersSent) {
         clientRes.writeHead(502, { 'Content-Type': 'application/json' });
@@ -157,6 +172,6 @@ export function handleOpenAI(clientReq, clientRes, store, onLog) {
 
   // 客户端请求读取错误处理
   clientReq.on('error', (err) => {
-    console.error('[openai-proxy] 客户端请求读取失败:', err.message);
+    console.error(`[${provider}-proxy] 客户端请求读取失败:`, err.message);
   });
 }

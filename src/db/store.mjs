@@ -243,6 +243,45 @@ export function createStore(dbPath) {
   }
 
   /**
+   * 获取终端状态面板所需的全部数据
+   * @returns {{ today_cost: number, total_saved: number, month_cost: number, last_month_cost: number }}
+   */
+  function getStatusData() {
+    const now = new Date();
+
+    // 今日花费
+    const todayPrefix = now.toISOString().slice(0, 10);
+    const todayRow = db.prepare(`
+      SELECT COALESCE(SUM(cost_usd), 0) AS cost FROM requests WHERE timestamp LIKE ?
+    `).get(`${todayPrefix}%`);
+
+    // 累计节省
+    const totalRow = db.prepare(`
+      SELECT COALESCE(SUM(saved_usd), 0) AS saved FROM requests
+    `).get();
+
+    // 本月花费
+    const monthPrefix = now.toISOString().slice(0, 7);
+    const monthRow = db.prepare(`
+      SELECT COALESCE(SUM(cost_usd), 0) AS cost FROM requests WHERE timestamp LIKE ?
+    `).get(`${monthPrefix}%`);
+
+    // 上月花费
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthPrefix = lastMonth.toISOString().slice(0, 7);
+    const lastMonthRow = db.prepare(`
+      SELECT COALESCE(SUM(cost_usd), 0) AS cost FROM requests WHERE timestamp LIKE ?
+    `).get(`${lastMonthPrefix}%`);
+
+    return {
+      today_cost: todayRow.cost,
+      total_saved: totalRow.saved,
+      month_cost: monthRow.cost,
+      last_month_cost: lastMonthRow.cost,
+    };
+  }
+
+  /**
    * 关闭数据库连接
    */
   function close() {
@@ -255,6 +294,7 @@ export function createStore(dbPath) {
     getSummary,
     getMonthSummary,
     getProviderStats,
+    getStatusData,
     getOffset,
     setOffset,
     hasRequest,

@@ -53,5 +53,82 @@
     "currency": "USD",
     "source": "https://openai.com/api/pricing",
     "updated": "2026-03-30"
+  },
+  "xai/grok-3": {
+    "input_per_1m": 3.00,
+    "output_per_1m": 15.00,
+    "currency": "USD",
+    "source": "https://docs.x.ai/docs/models",
+    "updated": "2026-03-31"
+  },
+  "xai/grok-3-mini": {
+    "input_per_1m": 0.30,
+    "output_per_1m": 0.50,
+    "currency": "USD",
+    "source": "https://docs.x.ai/docs/models",
+    "updated": "2026-03-31"
+  },
+  "gemini/gemini-2.5-pro": {
+    "input_per_1m": 1.25,
+    "output_per_1m": 10.00,
+    "currency": "USD",
+    "source": "https://ai.google.dev/pricing",
+    "updated": "2026-03-31"
+  },
+  "gemini/gemini-2.5-flash": {
+    "input_per_1m": 0.15,
+    "output_per_1m": 0.60,
+    "currency": "USD",
+    "source": "https://ai.google.dev/pricing",
+    "updated": "2026-03-31"
+  },
+  "moonshot/moonshot-v1-128k": {
+    "input_per_1m": 0.84,
+    "output_per_1m": 0.84,
+    "currency": "USD",
+    "source": "https://platform.moonshot.cn/docs/pricing",
+    "updated": "2026-03-31"
+  },
+  "qwen/qwen-max": {
+    "input_per_1m": 1.60,
+    "output_per_1m": 6.40,
+    "currency": "USD",
+    "source": "https://help.aliyun.com/zh/model-studio/billing",
+    "updated": "2026-03-31"
+  },
+  "qwen/qwen-plus": {
+    "input_per_1m": 0.40,
+    "output_per_1m": 1.20,
+    "currency": "USD",
+    "source": "https://help.aliyun.com/zh/model-studio/billing",
+    "updated": "2026-03-31"
+  },
+  "glm/glm-4-plus": {
+    "input_per_1m": 0.70,
+    "output_per_1m": 0.70,
+    "currency": "USD",
+    "source": "https://open.bigmodel.cn/pricing",
+    "updated": "2026-03-31"
+  },
+  "glm/glm-4-flash": {
+    "input_per_1m": 0.014,
+    "output_per_1m": 0.014,
+    "currency": "USD",
+    "source": "https://open.bigmodel.cn/pricing",
+    "updated": "2026-03-31"
+  },
+  "deepseek/deepseek-chat": {
+    "input_per_1m": 0.27,
+    "output_per_1m": 1.10,
+    "currency": "USD",
+    "source": "https://platform.deepseek.com/api-docs/pricing",
+    "updated": "2026-03-31"
+  },
+  "deepseek/deepseek-reasoner": {
+    "input_per_1m": 0.55,
+    "output_per_1m": 2.19,
+    "currency": "USD",
+    "source": "https://platform.deepseek.com/api-docs/pricing",
+    "updated": "2026-03-31"
   }
 }

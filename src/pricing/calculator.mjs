@@ -8,10 +8,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const pricingPath = join(__dirname, '../../data/pricing.json');
 const pricing = JSON.parse(readFileSync(pricingPath, 'utf-8'));
 
-// 基准模型：用于计算节省了多少费用
+// 基准模型：用于计算节省了多少费用（每个 provider 选最贵的模型作为基准）
 const BASELINE_MODELS = {
   anthropic: 'anthropic/claude-opus-4-6',
   openai: 'openai/gpt-4o',
+  xai: 'xai/grok-3',
+  gemini: 'gemini/gemini-2.5-pro',
+  moonshot: 'moonshot/moonshot-v1-128k',
+  qwen: 'qwen/qwen-max',
+  glm: 'glm/glm-4-plus',
+  deepseek: 'deepseek/deepseek-reasoner',
 };
 
 /**
