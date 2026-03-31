@@ -1,0 +1,326 @@
+/* ===========================
+   PinToken Dashboard 样式
+   暗色主题 + 品牌配色
+   =========================== */
+
+/* CSS 自定义变量 */
+:root {
+  --bg: #13151a;
+  --bg-card: #1e2025;
+  --border: #2a2d35;
+  --orange: #FF6B35;
+  --green: #27c93f;
+  --yellow: #ffbd2e;
+  --red: #ff5f56;
+  --text-primary: #e8eaf0;
+  --text-secondary: #8b8fa8;
+  --font: 'Courier New', monospace;
+}
+
+/* 全局重置 */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ===== 顶部导航栏 ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border-bottom: 2px solid var(--orange);
+  padding: 0 24px;
+  height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.brand {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* 状态徽章 */
+.status-badge {
+  background: rgba(39, 201, 63, 0.15);
+  color: var(--green);
+  border: 1px solid var(--green);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.03em;
+}
+
+/* ===== 主内容容器 ===== */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+/* ===== 汇总卡片网格 ===== */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* 基础卡片样式 */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 18px;
+}
+
+/* 高亮卡片：橙色边框（今日 Token 用量） */
+.card-highlight {
+  border-color: var(--orange);
+  background: rgba(255, 107, 53, 0.05);
+}
+
+.card-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+/* 卡片主数值 */
+.card-value {
+  font-size: 26px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  line-height: 1.1;
+}
+
+/* 橙色数值（花费） */
+.card-value-orange {
+  color: var(--orange);
+}
+
+/* 绿色数值（节省） */
+.card-value-green {
+  color: var(--green);
+}
+
+/* 卡片副文本 */
+.card-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* ===== Provider 过滤器 ===== */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.filter-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+/* 激活状态 */
+.filter-btn.active {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+  font-weight: bold;
+}
+
+/* ===== 请求明细表格 ===== */
+.table-wrapper {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.request-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* 表头样式 */
+.request-table thead tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.request-table th {
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  padding: 10px 14px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* 表格行样式 */
+.request-table tbody tr {
+  border-bottom: 1px solid rgba(42, 45, 53, 0.6);
+  transition: background 0.1s ease;
+}
+
+.request-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.request-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* 表格单元格 */
+.request-table td {
+  font-size: 11px;
+  color: var(--text-primary);
+  padding: 10px 14px;
+  vertical-align: middle;
+}
+
+/* 模型名称徽章 */
+.model-pill {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Provider 指示点 */
+.provider-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.provider-dot::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.provider-dot.anthropic::before {
+  background: var(--orange);
+}
+
+.provider-dot.openai::before {
+  background: #10a37f;
+}
+
+/* 进度条（Token 占比） */
+.progress-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar {
+  width: 80px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--orange);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progress-pct {
+  font-size: 10px;
+  color: var(--text-secondary);
+  min-width: 34px;
+}
+
+/* 花费文字颜色 */
+.cost-value {
+  color: var(--orange);
+}
+
+/* 节省文字颜色 */
+.saved-value {
+  color: var(--green);
+}
+
+/* 空状态提示 */
+.empty-state {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 40px 0;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* ===== 响应式：小屏幕折叠为 2 列 ===== */
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .container {
+    padding: 16px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PinToken Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- 顶部导航栏 -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo">🪙</span>
+      <span class="brand">PinToken</span>
+    </div>
+    <div class="topbar-right">
+      <span class="status-badge">正常</span>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="container">
+
+    <!-- 汇总卡片区域 -->
+    <section class="cards-grid">
+
+      <!-- 卡片1：今日 Token 用量（高亮） -->
+      <div class="card card-highlight">
+        <div class="card-label">今日 Token 用量</div>
+        <div class="card-value" id="todayTokens">—</div>
+        <div class="card-sub">昨日：<span id="yesterdayTokens">—</span></div>
+      </div>
+
+      <!-- 卡片2：今日花费 -->
+      <div class="card">
+        <div class="card-label">今日花费</div>
+        <div class="card-value card-value-orange" id="todayCost">—</div>
+        <div class="card-sub">昨日：<span id="yesterdayCost">—</span></div>
+      </div>
+
+      <!-- 卡片3：本次会话时长 -->
+      <div class="card">
+        <div class="card-label">本次会话时长</div>
+        <div class="card-value" id="sessionTime">—</div>
+        <div class="card-sub">当前活跃会话</div>
+      </div>
+
+      <!-- 卡片4：累计节省 -->
+      <div class="card">
+        <div class="card-label">累计节省</div>
+        <div class="card-value card-value-green" id="totalSaved">—</div>
+        <div class="card-sub">节省比例：<span id="savedPercent">—</span></div>
+      </div>
+
+    </section>
+
+    <!-- Provider 过滤器 -->
+    <section class="filter-bar">
+      <button class="filter-btn active" data-provider="">全部</button>
+      <button class="filter-btn" data-provider="anthropic">Anthropic</button>
+      <button class="filter-btn" data-provider="openai">OpenAI</button>
+    </section>
+
+    <!-- 请求明细表格 -->
+    <section class="table-wrapper">
+      <table class="request-table">
+        <thead>
+          <tr>
+            <th>模型</th>
+            <th>Provider</th>
+            <th>Token 用量</th>
+            <th>占比</th>
+            <th>花费</th>
+            <th>节省</th>
+          </tr>
+        </thead>
+        <tbody id="requestBody">
+          <!-- 由 app.js 动态渲染 -->
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
