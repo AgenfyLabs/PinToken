@@ -1,0 +1,57 @@
+{
+  "anthropic/claude-opus-4-6": {
+    "input_per_1m": 15.00,
+    "output_per_1m": 75.00,
+    "cache_write_per_1m": 18.75,
+    "cache_read_per_1m": 1.50,
+    "currency": "USD",
+    "source": "https://anthropic.com/pricing",
+    "updated": "2026-03-30"
+  },
+  "anthropic/claude-sonnet-4-6": {
+    "input_per_1m": 3.00,
+    "output_per_1m": 15.00,
+    "cache_write_per_1m": 3.75,
+    "cache_read_per_1m": 0.30,
+    "currency": "USD",
+    "source": "https://anthropic.com/pricing",
+    "updated": "2026-03-30"
+  },
+  "anthropic/claude-haiku-4-5": {
+    "input_per_1m": 0.80,
+    "output_per_1m": 4.00,
+    "cache_write_per_1m": 1.00,
+    "cache_read_per_1m": 0.08,
+    "currency": "USD",
+    "source": "https://anthropic.com/pricing",
+    "updated": "2026-03-30"
+  },
+  "openai/gpt-4o": {
+    "input_per_1m": 2.50,
+    "output_per_1m": 10.00,
+    "currency": "USD",
+    "source": "https://openai.com/api/pricing",
+    "updated": "2026-03-30"
+  },
+  "openai/gpt-4o-mini": {
+    "input_per_1m": 0.15,
+    "output_per_1m": 0.60,
+    "currency": "USD",
+    "source": "https://openai.com/api/pricing",
+    "updated": "2026-03-30"
+  },
+  "openai/o3": {
+    "input_per_1m": 2.00,
+    "output_per_1m": 8.00,
+    "currency": "USD",
+    "source": "https://openai.com/api/pricing",
+    "updated": "2026-03-30"
+  },
+  "openai/o3-mini": {
+    "input_per_1m": 1.10,
+    "output_per_1m": 4.40,
+    "currency": "USD",
+    "source": "https://openai.com/api/pricing",
+    "updated": "2026-03-30"
+  }
+}
