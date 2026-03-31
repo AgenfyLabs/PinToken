@@ -20,7 +20,7 @@
       <span class="brand">PinToken</span>
     </div>
     <div class="topbar-right">
-      <button class="share-btn" id="shareBtn" title="生成分享卡片">📤 分享</button>
+      <button class="share-btn" id="shareBtn" title="生成分享卡片">Share</button>
       <button class="close-btn" id="closeBtn" title="关闭">✕</button>
     </div>
   </header>
@@ -159,8 +159,16 @@
         <!-- Canvas 渲染的卡片预览 -->
       </div>
       <div class="share-modal-actions">
-        <button class="share-action-btn share-action-download" id="shareDownload">📥 下载图片</button>
-        <button class="share-action-btn share-action-tweet" id="shareTweet">🐦 发推文</button>
+        <button class="share-action-btn share-action-download" id="shareDownload">下载图片</button>
+      </div>
+      <div class="share-modal-divider"></div>
+      <div class="share-modal-label">分享到</div>
+      <div class="share-platforms">
+        <button class="share-platform" data-platform="twitter" title="X / Twitter">𝕏</button>
+        <button class="share-platform" data-platform="reddit" title="Reddit">R</button>
+        <button class="share-platform" data-platform="linkedin" title="LinkedIn">in</button>
+        <button class="share-platform" data-platform="hackernews" title="Hacker News">Y</button>
+        <button class="share-platform" data-platform="copy" title="复制链接">⎘</button>
       </div>
     </div>
   </div>

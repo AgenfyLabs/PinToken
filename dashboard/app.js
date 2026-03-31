@@ -500,9 +500,34 @@ document.addEventListener('DOMContentLoaded', () => {
     link.click();
   });
 
-  // 发推文：打开 Twitter Intent 链接
-  document.getElementById('shareTweet').addEventListener('click', () => {
-    const text = encodeURIComponent('I saved money on AI APIs with PinToken! 🪙\nTrack your LLM spending → pintoken.io\n#PinToken #AIcosts');
-    window.open('https://twitter.com/intent/tweet?text=' + text, '_blank');
+  // 多平台分享
+  const shareText = 'I saved money on AI APIs with PinToken!\nTrack your LLM spending → pintoken.io\n#PinToken #AIcosts';
+  const shareUrl = 'https://pintoken.io';
+
+  document.querySelectorAll('.share-platform').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const platform = btn.dataset.platform;
+      const encoded = encodeURIComponent(shareText);
+      const encodedUrl = encodeURIComponent(shareUrl);
+
+      const urls = {
+        twitter: `https://twitter.com/intent/tweet?text=${encoded}`,
+        reddit: `https://www.reddit.com/submit?title=${encodeURIComponent('PinToken - Track your AI API spending')}&url=${encodedUrl}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+        hackernews: `https://news.ycombinator.com/submitlink?u=${encodedUrl}&t=${encodeURIComponent('PinToken – Pin your token, save your dollar')}`,
+      };
+
+      if (platform === 'copy') {
+        navigator.clipboard.writeText(shareText + '\n' + shareUrl).then(() => {
+          btn.textContent = '✓';
+          btn.style.color = 'var(--green)';
+          btn.style.borderColor = 'var(--green)';
+          setTimeout(() => { btn.textContent = '⎘'; btn.style.color = ''; btn.style.borderColor = ''; }, 1500);
+        });
+        return;
+      }
+
+      if (urls[platform]) window.open(urls[platform], '_blank');
+    });
   });
 });
