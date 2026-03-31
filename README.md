@@ -9,7 +9,7 @@
 Track every LLM API call, visualize costs, and see exactly where your money goes — all locally, all private.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-FF6B35?style=flat-square)](LICENSE)
-[![npm version](https://img.shields.io/npm/v/pintoken?style=flat-square&color=FF6B35)](https://www.npmjs.com/package/pintoken)
+[![npm version](https://img.shields.io/npm/v/pintoken-cli?style=flat-square&color=FF6B35)](https://www.npmjs.com/package/pintoken-cli)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-27c93f?style=flat-square)](https://nodejs.org)
 [![Providers](https://img.shields.io/badge/providers-8-6366f1?style=flat-square)](#supported-providers)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-27c93f?style=flat-square)](https://github.com/AgenfyLabs/PinToken/pulls)
@@ -35,7 +35,7 @@ PinToken is a zero-config local proxy that sits between your tools and LLM provi
 ## Quick Start
 
 ```bash
-npx pintoken setup
+npx pintoken-cli setup
 ```
 
 That's it. PinToken will:
@@ -148,7 +148,7 @@ PinToken is built with a **zero-trust** approach to your API keys:
 ## CLI Commands
 
 ```bash
-npx pintoken setup     # First-time setup: proxy + dashboard + auto-config
+npx pintoken-cli setup     # First-time setup: proxy + dashboard + auto-config
 npx pintoken start     # Start the proxy server
 npx pintoken status    # Terminal status panel with live stats
 ```

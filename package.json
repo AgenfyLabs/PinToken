@@ -1,11 +1,17 @@
 {
-  "name": "pintoken",
+  "name": "pintoken-cli",
   "version": "0.1.0",
-  "description": "Track your LLM API usage & costs locally",
+  "description": "Track your LLM API usage & costs locally — token counts, costs, peak alerts, shareable report cards",
   "type": "module",
   "bin": {
     "pintoken": "./bin/pintoken.mjs"
   },
+  "files": [
+    "bin/",
+    "src/",
+    "dashboard/",
+    "data/"
+  ],
   "scripts": {
     "start": "node bin/pintoken.mjs start",
     "setup": "node bin/pintoken.mjs setup",
@@ -18,8 +24,17 @@
     "cost-management",
     "anthropic",
     "openai",
-    "proxy"
+    "claude",
+    "cursor",
+    "proxy",
+    "usage-tracking"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AgenfyLabs/PinToken"
+  },
+  "homepage": "https://pintoken.ai",
+  "author": "AgenfyLabs",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
