@@ -189,6 +189,36 @@ describe('createStore', () => {
     });
   });
 
+  describe('Scanner offset 管理', () => {
+    it('setOffset + getOffset 应能正确读写', () => {
+      store.setOffset('/path/to/file.jsonl', 1234, '2026-03-31T00:00:00.000Z');
+      const result = store.getOffset('/path/to/file.jsonl');
+      assert.equal(result.last_offset, 1234);
+      assert.equal(result.last_modified, '2026-03-31T00:00:00.000Z');
+    });
+
+    it('未知文件应返回 offset 0', () => {
+      const result = store.getOffset('/path/to/nonexistent.jsonl');
+      assert.equal(result.last_offset, 0);
+      assert.equal(result.last_modified, null);
+    });
+
+    it('更新已有 offset 应覆盖旧值', () => {
+      store.setOffset('/path/to/update.jsonl', 100, '2026-01-01T00:00:00.000Z');
+      store.setOffset('/path/to/update.jsonl', 999, '2026-03-31T00:00:00.000Z');
+      const result = store.getOffset('/path/to/update.jsonl');
+      assert.equal(result.last_offset, 999);
+      assert.equal(result.last_modified, '2026-03-31T00:00:00.000Z');
+    });
+
+    it('hasRequest 已存在返回 true，不存在返回 false', () => {
+      const record = makeRecord({ id: 'has-request-test-1' });
+      store.insertRequest(record);
+      assert.equal(store.hasRequest('has-request-test-1'), true);
+      assert.equal(store.hasRequest('nonexistent-id-xyz'), false);
+    });
+  });
+
   describe('getProviderStats', () => {
     it('应该返回每个 provider 的统计数组', () => {
       const isolatedDir = mkdtempSync(join(tmpdir(), 'pintoken-stats-'));

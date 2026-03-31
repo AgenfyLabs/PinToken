@@ -47,7 +47,19 @@ export function createStore(dbPath) {
     );
     CREATE INDEX IF NOT EXISTS idx_timestamp ON requests(timestamp);
     CREATE INDEX IF NOT EXISTS idx_provider  ON requests(provider);
+    CREATE TABLE IF NOT EXISTS scanner_offsets (
+      file_path      TEXT PRIMARY KEY,
+      last_offset    INTEGER DEFAULT 0,
+      last_modified  TEXT
+    );
   `);
+
+  // 兼容已有数据库：追加 source 列（若已存在则忽略）
+  try {
+    db.exec("ALTER TABLE requests ADD COLUMN source TEXT DEFAULT 'proxy'");
+  } catch {
+    // 列已存在，忽略
+  }
 
   // 预编译插入语句，提升批量写入性能
   const stmtInsert = db.prepare(`
@@ -55,12 +67,12 @@ export function createStore(dbPath) {
       id, timestamp, provider, model,
       input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
       cost_usd, baseline_cost_usd, saved_usd,
-      latency_ms, status_code
+      latency_ms, status_code, source
     ) VALUES (
       @id, @timestamp, @provider, @model,
       @input_tokens, @output_tokens, @cache_read_tokens, @cache_write_tokens,
       @cost_usd, @baseline_cost_usd, @saved_usd,
-      @latency_ms, @status_code
+      @latency_ms, @status_code, @source
     )
   `);
 
@@ -70,10 +82,8 @@ export function createStore(dbPath) {
    */
   function insertRequest(record) {
     stmtInsert.run({
-      id: record.id,
-      timestamp: record.timestamp,
-      provider: record.provider,
-      model: record.model,
+      source: 'proxy',
+      ...record,
       input_tokens: record.input_tokens ?? 0,
       output_tokens: record.output_tokens ?? 0,
       cache_read_tokens: record.cache_read_tokens ?? 0,
@@ -172,6 +182,40 @@ export function createStore(dbPath) {
   }
 
   /**
+   * 获取指定文件的扫描偏移量
+   * @param {string} filePath - 文件路径
+   * @returns {{ last_offset: number, last_modified: string|null }}
+   */
+  function getOffset(filePath) {
+    const row = db.prepare('SELECT last_offset, last_modified FROM scanner_offsets WHERE file_path = ?').get(filePath);
+    return row || { last_offset: 0, last_modified: null };
+  }
+
+  /**
+   * 更新或插入指定文件的扫描偏移量
+   * @param {string} filePath - 文件路径
+   * @param {number} offset - 当前字节偏移量
+   * @param {string} lastModified - 文件最后修改时间（ISO 字符串）
+   */
+  function setOffset(filePath, offset, lastModified) {
+    db.prepare(`
+      INSERT INTO scanner_offsets (file_path, last_offset, last_modified)
+      VALUES (?, ?, ?)
+      ON CONFLICT(file_path) DO UPDATE SET last_offset = ?, last_modified = ?
+    `).run(filePath, offset, lastModified, offset, lastModified);
+  }
+
+  /**
+   * 检查指定 id 的请求记录是否已存在（用于去重）
+   * @param {string} id - 请求 id
+   * @returns {boolean}
+   */
+  function hasRequest(id) {
+    const row = db.prepare('SELECT 1 FROM requests WHERE id = ?').get(id);
+    return !!row;
+  }
+
+  /**
    * 关闭数据库连接
    */
   function close() {
@@ -183,6 +227,9 @@ export function createStore(dbPath) {
     getRequests,
     getSummary,
     getProviderStats,
+    getOffset,
+    setOffset,
+    hasRequest,
     close,
   };
 }
