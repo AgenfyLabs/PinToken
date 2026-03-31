@@ -500,25 +500,52 @@ document.addEventListener('DOMContentLoaded', () => {
     link.click();
   });
 
-  // 多平台分享
-  const shareText = 'I saved money on AI APIs with PinToken!\nTrack your LLM spending → pintoken.io\n#PinToken #AIcosts';
-  const shareUrl = 'https://pintoken.io';
+  // 多平台分享（动态文案 + X 分享自动下载图片）
+  let _shareData = null; // 缓存当前卡片数据
+
+  // 保存 share data 供分享按钮使用
+  const origShareClick = document.getElementById('shareBtn').onclick;
+  document.getElementById('shareBtn').addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/share-data');
+      if (res.ok) _shareData = await res.json();
+    } catch {}
+  }, true); // capture phase，先于弹窗逻辑执行
+
+  function getShareText() {
+    const saved = _shareData ? '$' + _shareData.saved.toFixed(0) : 'money';
+    return `I saved ${saved} on AI APIs this month with PinToken!\nTrack your LLM spending → PinToken.ai\n#PinToken #AIcosts`;
+  }
+
+  // 下载当前 Canvas 为 PNG
+  function downloadCardImage() {
+    const canvas = document.querySelector('#sharePreview canvas');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = 'pintoken-savings.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
 
   document.querySelectorAll('.share-platform').forEach(btn => {
     btn.addEventListener('click', () => {
       const platform = btn.dataset.platform;
-      const encoded = encodeURIComponent(shareText);
+      const text = getShareText();
+      const encoded = encodeURIComponent(text);
+      const shareUrl = 'https://PinToken.ai';
       const encodedUrl = encodeURIComponent(shareUrl);
 
-      const urls = {
-        twitter: `https://twitter.com/intent/tweet?text=${encoded}`,
-        reddit: `https://www.reddit.com/submit?title=${encodeURIComponent('PinToken - Track your AI API spending')}&url=${encodedUrl}`,
-        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-        hackernews: `https://news.ycombinator.com/submitlink?u=${encodedUrl}&t=${encodeURIComponent('PinToken – Pin your token, save your dollar')}`,
-      };
+      if (platform === 'twitter') {
+        // 先下载图片，再打开推文编辑器（用户手动粘贴图片）
+        downloadCardImage();
+        setTimeout(() => {
+          window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
+        }, 500);
+        return;
+      }
 
       if (platform === 'copy') {
-        navigator.clipboard.writeText(shareText + '\n' + shareUrl).then(() => {
+        navigator.clipboard.writeText(text + '\n' + shareUrl).then(() => {
           btn.textContent = '✓';
           btn.style.color = 'var(--green)';
           btn.style.borderColor = 'var(--green)';
@@ -526,6 +553,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return;
       }
+
+      const urls = {
+        reddit: `https://www.reddit.com/submit?title=${encodeURIComponent('PinToken - Track your AI API spending')}&url=${encodedUrl}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+        hackernews: `https://news.ycombinator.com/submitlink?u=${encodedUrl}&t=${encodeURIComponent('PinToken – Pin your token, save your dollar')}`,
+      };
 
       if (urls[platform]) window.open(urls[platform], '_blank');
     });

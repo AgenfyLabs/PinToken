@@ -158,7 +158,7 @@ function generateShareCard(data) {
 
   ctx.fillStyle = DIM;
   ctx.font = '11px monospace';
-  ctx.fillText('Track your AI spending → pintoken.io', L, H - PAD - 14);
+  ctx.fillText('Track your AI spending → PinToken.ai', L, H - PAD - 14);
 
   ctx.fillStyle = ORANGE;
   ctx.font = 'bold 11px monospace';
