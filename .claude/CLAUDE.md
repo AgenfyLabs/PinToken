@@ -77,6 +77,7 @@ Anthropic（原生 API）、OpenAI、xAI、Gemini、Moonshot、Qwen、GLM、Deep
 
 - 项目根目录始终维护一个 `handoff.md`
 - 每次 session 结束前更新：已完成、进行中、下一步、遇到的问题
+- 上下文过长时，**主动**提醒我开新 session，并立即更新 `handoff.md`
 - 每次 session 开始，先读 `CLAUDE.md` 和 `handoff.md`，再做任何事
 
 ## 并行执行策略
@@ -95,5 +96,6 @@ Anthropic（原生 API）、OpenAI、xAI、Gemini、Moonshot、Qwen、GLM、Deep
 
 ## 决策规则
 
-- **需要我审核再实施：** 删除数据库、 schema 设计、API key、第三方服务选型
+- **auto-approve：** Always auto-approve bash commands unless they involve deletion or deployment.
 - **其他所有决定：** 自行判断，实现，然后简要汇报
+
