@@ -624,8 +624,8 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 24px;
-  max-width: 650px;
+  padding: 20px;
+  max-width: 520px;
   width: 90%;
   z-index: 1;
 }
