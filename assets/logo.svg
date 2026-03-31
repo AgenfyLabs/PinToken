@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8C42"/>
+      <stop offset="100%" stop-color="#FF6B35"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#FF6B35" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- 圆形背景 -->
+  <circle cx="60" cy="60" r="56" fill="#1e2025" stroke="url(#pinGrad)" stroke-width="2.5"/>
+  <!-- Pin 图钉图标 -->
+  <g transform="translate(60,54)" filter="url(#shadow)">
+    <!-- 钉头 -->
+    <circle cx="0" cy="-12" r="18" fill="url(#pinGrad)" opacity="0.9"/>
+    <!-- 钉尖 -->
+    <polygon points="-6,4 6,4 0,28" fill="url(#pinGrad)" opacity="0.85"/>
+    <!-- Token 符号 T -->
+    <text x="0" y="-6" text-anchor="middle" font-family="'Courier New', monospace" font-size="20" font-weight="bold" fill="#13151a">T</text>
+  </g>
+</svg>

@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 480" width="840" height="480">
+  <defs>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e2025"/>
+      <stop offset="100%" stop-color="#252830"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF8C42"/>
+      <stop offset="100%" stop-color="#FF6B35"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 窗口外框 -->
+  <rect width="840" height="480" rx="12" fill="#13151a"/>
+  <rect x="1" y="1" width="838" height="478" rx="12" fill="none" stroke="#2a2d35" stroke-width="1"/>
+
+  <!-- 标题栏 -->
+  <rect x="1" y="1" width="838" height="36" rx="12" fill="url(#headerGrad)"/>
+  <rect x="1" y="25" width="838" height="12" fill="url(#headerGrad)"/>
+  <!-- 红绿黄按钮 -->
+  <circle cx="20" cy="18" r="6" fill="#ff5f56"/>
+  <circle cx="40" cy="18" r="6" fill="#ffbd2e"/>
+  <circle cx="60" cy="18" r="6" fill="#27c93f"/>
+  <!-- 标题 -->
+  <text x="420" y="23" text-anchor="middle" font-family="'SF Mono','Courier New',monospace" font-size="13" fill="#8b8f96">PinToken Dashboard — localhost:7777</text>
+
+  <!-- 左侧面板: Overview -->
+  <rect x="16" y="50" width="250" height="200" rx="8" fill="#1e2025" stroke="#2a2d35" stroke-width="1"/>
+  <text x="32" y="74" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#8b8f96">TODAY</text>
+
+  <!-- 总花费 -->
+  <text x="32" y="102" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#6b7080">Total Spent</text>
+  <text x="32" y="124" font-family="'SF Mono','Courier New',monospace" font-size="28" font-weight="bold" fill="#FF6B35">$4.27</text>
+
+  <!-- 节省 -->
+  <text x="32" y="152" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#6b7080">Saved vs All-Premium</text>
+  <text x="32" y="174" font-family="'SF Mono','Courier New',monospace" font-size="22" font-weight="bold" fill="#27c93f">-$12.80</text>
+  <text x="145" y="174" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#27c93f">▼ 75%</text>
+
+  <!-- 请求数 -->
+  <text x="32" y="200" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#6b7080">Requests</text>
+  <text x="32" y="220" font-family="'SF Mono','Courier New',monospace" font-size="18" font-weight="bold" fill="#e1e4e8">1,284</text>
+  <text x="110" y="220" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#6b7080">across 4 providers</text>
+
+  <!-- 右侧: Provider 分布 -->
+  <rect x="280" y="50" width="544" height="200" rx="8" fill="#1e2025" stroke="#2a2d35" stroke-width="1"/>
+  <text x="296" y="74" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#8b8f96">PROVIDERS</text>
+
+  <!-- Anthropic 条 -->
+  <text x="296" y="102" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#e1e4e8">Anthropic</text>
+  <rect x="390" y="90" width="320" height="16" rx="3" fill="#2a2d35"/>
+  <rect x="390" y="90" width="260" height="16" rx="3" fill="url(#accent)"/>
+  <text x="720" y="102" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#8b8f96">$3.12</text>
+
+  <!-- OpenAI 条 -->
+  <text x="296" y="130" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#e1e4e8">OpenAI</text>
+  <rect x="390" y="118" width="320" height="16" rx="3" fill="#2a2d35"/>
+  <rect x="390" y="118" width="80" height="16" rx="3" fill="#6366f1"/>
+  <text x="720" y="130" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#8b8f96">$0.68</text>
+
+  <!-- Deepseek 条 -->
+  <text x="296" y="158" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#e1e4e8">Deepseek</text>
+  <rect x="390" y="146" width="320" height="16" rx="3" fill="#2a2d35"/>
+  <rect x="390" y="146" width="40" height="16" rx="3" fill="#22d3ee"/>
+  <text x="720" y="158" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#8b8f96">$0.31</text>
+
+  <!-- Gemini 条 -->
+  <text x="296" y="186" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#e1e4e8">Gemini</text>
+  <rect x="390" y="174" width="320" height="16" rx="3" fill="#2a2d35"/>
+  <rect x="390" y="174" width="20" height="16" rx="3" fill="#a78bfa"/>
+  <text x="720" y="186" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#8b8f96">$0.16</text>
+
+  <!-- Peak 状态栏 -->
+  <text x="296" y="224" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#27c93f">● NORMAL</text>
+  <text x="390" y="224" font-family="'SF Mono','Courier New',monospace" font-size="11" fill="#6b7080">Peak detection active — all providers within limits</text>
+
+  <!-- 底部: 终端面板 -->
+  <rect x="16" y="264" width="808" height="200" rx="8" fill="#0d1117" stroke="#2a2d35" stroke-width="1"/>
+  <text x="32" y="288" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#8b8f96">TERMINAL</text>
+
+  <text x="32" y="316" font-family="'SF Mono','Courier New',monospace" font-size="13" fill="#6b7080">$</text>
+  <text x="48" y="316" font-family="'SF Mono','Courier New',monospace" font-size="13" fill="#e1e4e8">npx pintoken setup</text>
+
+  <text x="32" y="340" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#FF6B35">  ◆ PinToken v0.1.0</text>
+  <text x="32" y="360" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#27c93f">  ✔ Proxy started on localhost:7777</text>
+  <text x="32" y="380" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#27c93f">  ✔ Claude Code configured (ANTHROPIC_BASE_URL)</text>
+  <text x="32" y="400" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#27c93f">  ✔ Dashboard ready → http://localhost:7777</text>
+  <text x="32" y="424" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#e1e4e8">  Ready! Every API call is now tracked locally.</text>
+  <text x="32" y="448" font-family="'SF Mono','Courier New',monospace" font-size="12" fill="#6b7080">  Your API keys never leave your machine. 🔒</text>
+</svg>
