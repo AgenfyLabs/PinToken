@@ -4,6 +4,43 @@
  */
 
 /**
+ * 判断当前高峰时段状态
+ * Anthropic 高峰：北京时间 21:00–03:00（硬编码，PRD 要求）
+ * @returns {{ status: 'normal'|'warning'|'peak', label: string, tip: string }}
+ */
+function getPeakStatus() {
+  const now = new Date();
+  // 转换为北京时间小时（UTC+8）
+  const bjHour = (now.getUTCHours() + 8) % 24;
+  const bjMinute = now.getUTCMinutes();
+
+  // 高峰：21:00–03:00 北京时间
+  const isPeak = bjHour >= 21 || bjHour < 3;
+  // 预警：20:30–21:00 北京时间
+  const isWarning = bjHour === 20 && bjMinute >= 30;
+
+  if (isPeak) {
+    return {
+      status: 'peak',
+      label: '高峰',
+      tip: 'Anthropic 当前处于限速高峰期，建议延后或降级模型',
+    };
+  }
+  if (isWarning) {
+    return {
+      status: 'warning',
+      label: '即将高峰',
+      tip: '30 分钟内进入 Anthropic 高峰时段',
+    };
+  }
+  return {
+    status: 'normal',
+    label: '正常',
+    tip: '',
+  };
+}
+
+/**
  * 统一设置响应头
  */
 function setHeaders(res) {
@@ -26,12 +63,20 @@ export async function handleAPI(req, res, store, startedAt) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathname = url.pathname;
 
-    // GET /api/summary — 返回汇总统计，附加会话秒数
+    // GET /api/summary — 返回汇总统计，附加会话秒数和高峰状态
     if (pathname === '/api/summary' && req.method === 'GET') {
       const summary = await store.getSummary();
       const session_seconds = Math.floor((Date.now() - startedAt) / 1000);
+      const peak = getPeakStatus();
       res.writeHead(200);
-      res.end(JSON.stringify({ ...summary, session_seconds }));
+      res.end(JSON.stringify({ ...summary, session_seconds, peak }));
+      return;
+    }
+
+    // GET /api/peak-status — 返回当前高峰时段状态
+    if (pathname === '/api/peak-status' && req.method === 'GET') {
+      res.writeHead(200);
+      res.end(JSON.stringify(getPeakStatus()));
       return;
     }
 
@@ -45,6 +90,22 @@ export async function handleAPI(req, res, store, startedAt) {
       const requests = await store.getRequests({ provider, limit, offset });
       res.writeHead(200);
       res.end(JSON.stringify(requests));
+      return;
+    }
+
+    // GET /api/subscription — 返回本月费用 vs 订阅对比数据
+    if (pathname === '/api/subscription' && req.method === 'GET') {
+      const monthData = await store.getMonthSummary();
+      // Max 订阅月费 $100（Claude Code Max），$200（Team Max）
+      const maxMonthly = 100;
+      const diff = monthData.month_cost - maxMonthly;
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        ...monthData,
+        subscription_cost: maxMonthly,
+        diff,              // 正数 = API 更贵，负数 = 订阅更贵
+        saved_by_sub: diff > 0 ? diff : 0,
+      }));
       return;
     }
 

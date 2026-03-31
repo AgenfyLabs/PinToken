@@ -216,6 +216,33 @@ export function createStore(dbPath) {
   }
 
   /**
+   * 获取本月汇总数据（用于订阅对比）
+   * @returns {{ month_tokens, month_cost, month_requests, month_label }}
+   */
+  function getMonthSummary() {
+    const now = new Date();
+    // 本月前缀：如 "2026-03"
+    const monthPrefix = now.toISOString().slice(0, 7);
+
+    const stmt = db.prepare(`
+      SELECT
+        COALESCE(SUM(input_tokens + output_tokens + cache_read_tokens + cache_write_tokens), 0) AS tokens,
+        COALESCE(SUM(cost_usd), 0) AS cost,
+        COUNT(*) AS requests
+      FROM requests
+      WHERE timestamp LIKE ?
+    `);
+    const row = stmt.get(`${monthPrefix}%`);
+
+    return {
+      month_tokens: row.tokens,
+      month_cost: row.cost,
+      month_requests: row.requests,
+      month_label: monthPrefix,
+    };
+  }
+
+  /**
    * 关闭数据库连接
    */
   function close() {
@@ -226,6 +253,7 @@ export function createStore(dbPath) {
     insertRequest,
     getRequests,
     getSummary,
+    getMonthSummary,
     getProviderStats,
     getOffset,
     setOffset,

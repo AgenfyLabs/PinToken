@@ -28,7 +28,7 @@ function formatNumber(n) {
  */
 function formatCost(n) {
   if (n == null || isNaN(n)) return '—';
-  return '$' + Number(n).toFixed(4);
+  return '$' + Number(n).toFixed(2);
 }
 
 /**
@@ -74,6 +74,9 @@ async function fetchSummary() {
     const sessionSeconds = data.session_seconds || 0;
     document.getElementById('sessionTime').textContent =
       formatTime(sessionSeconds * 1000);
+
+    // 高峰状态
+    updatePeakStatus(data.peak);
 
     // 累计节省
     document.getElementById('totalSaved').textContent =
@@ -198,6 +201,69 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ===== 高峰状态更新 =====
+
+// 各状态对应的文案
+const PEAK_MESSAGES = {
+  normal: {
+    headline: '当前状态正常，所有 API 运行稳定',
+    desc: '当前所有 Provider 运行正常，API 响应速度稳定，可放心使用。下一个高峰时段：今晚 21:00（北京时间）',
+  },
+  warning: {
+    headline: '注意：30 分钟内将进入高峰时段',
+    desc: 'Anthropic 即将进入限速高峰（21:00–03:00 北京时间），建议提前完成重要任务，或切换至非高峰 Provider',
+  },
+  peak: {
+    headline: '当前处于高峰限速时段，请注意用量',
+    desc: 'Anthropic 当前处于限速高峰期（21:00–03:00 北京时间），响应可能变慢或触发限速，建议降级模型或延后使用',
+  },
+};
+
+/**
+ * 根据 summary 中的 peak 数据更新顶部胶囊 + 状态区域
+ * @param {{ status, label, tip }} peak
+ */
+function updatePeakStatus(peak) {
+  if (!peak) return;
+
+  // 状态区域
+  const section = document.getElementById('statusSection');
+  section.className = 'status-section ' + peak.status;
+
+  const msg = PEAK_MESSAGES[peak.status] || PEAK_MESSAGES.normal;
+  document.getElementById('statusHeadline').textContent = msg.headline;
+  document.getElementById('statusDesc').textContent = msg.desc;
+}
+
+// ===== 订阅对比卡片 =====
+
+/**
+ * 拉取 /api/subscription 并更新第 5 张卡片
+ */
+async function fetchSubscription() {
+  try {
+    const res = await fetch('/api/subscription');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const diff = data.diff || 0;
+    const savedEl = document.getElementById('subSaved');
+    const detailEl = document.getElementById('subDetail');
+
+    if (diff > 0) {
+      savedEl.textContent = '$' + diff.toFixed(2);
+      savedEl.style.color = 'var(--green)';
+      detailEl.textContent = '省 ' + ((diff / data.month_cost) * 100).toFixed(0) + '%';
+    } else {
+      savedEl.textContent = '$' + Math.abs(diff).toFixed(2);
+      savedEl.style.color = 'var(--yellow)';
+      detailEl.textContent = '用量较少';
+    }
+  } catch (err) {
+    console.warn('[PinToken] subscription fetch failed:', err.message);
+  }
+}
+
 // ===== Provider 过滤器交互 =====
 
 /**
@@ -225,6 +291,7 @@ function initFilterButtons() {
  */
 function refresh() {
   fetchSummary();
+  fetchSubscription();
   fetchRequests(currentProvider);
 }
 
@@ -242,4 +309,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initFilterButtons();  // 绑定过滤器按钮
   refresh();            // 立即首次加载
   startPolling();       // 开始轮询
+
+  // 关闭按钮：Electron 环境关窗口，浏览器关标签页
+  document.getElementById('closeBtn').addEventListener('click', () => {
+    if (window.electronAPI?.close) {
+      window.electronAPI.close();
+    } else {
+      window.close();
+    }
+  });
 });

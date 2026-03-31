@@ -25,12 +25,28 @@
 }
 
 body {
-  background-color: var(--bg);
+  background-color: #0a0b0e;
   color: var(--text-primary);
   font-family: var(--font);
   font-size: 13px;
   line-height: 1.5;
   min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+/* ===== 弹窗外壳 ===== */
+.window {
+  width: 100%;
+  max-width: 960px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 /* ===== 顶部导航栏 ===== */
@@ -42,9 +58,7 @@ body {
   border-bottom: 2px solid var(--orange);
   padding: 0 24px;
   height: 52px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  border-radius: 10px 10px 0 0;
 }
 
 .topbar-left {
@@ -53,9 +67,15 @@ body {
   gap: 10px;
 }
 
-.logo {
-  font-size: 20px;
-  line-height: 1;
+/* 像素图钉 Logo（SVG inline，PRD 配色） */
+.logo-pin {
+  display: inline-block;
+  width: 16px;
+  height: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='24' viewBox='0 0 9 15' shape-rendering='crispEdges'%3E%3Crect x='3' y='0' width='3' height='2' fill='%23FFAA7A'/%3E%3Crect x='2' y='0' width='5' height='3' fill='%23FF6B35'/%3E%3Crect x='1' y='3' width='7' height='2' fill='%23FF6B35'/%3E%3Crect x='3' y='0' width='2' height='2' fill='%23FFAA7A'/%3E%3Crect x='2' y='5' width='5' height='2' fill='%23CC4A1A'/%3E%3Crect x='3' y='7' width='3' height='3' fill='%23AA3A10'/%3E%3Crect x='4' y='10' width='1' height='3' fill='%23884000'/%3E%3Crect x='4' y='13' width='1' height='2' fill='%23663000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
 }
 
 .brand {
@@ -66,23 +86,82 @@ body {
   text-transform: uppercase;
 }
 
-/* 状态徽章 */
+/* 关闭按钮 */
+.close-btn {
+  background: none;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  font-family: var(--font);
+  transition: all 0.15s ease;
+  margin-left: 12px;
+}
+.close-btn:hover {
+  color: var(--red);
+  border-color: var(--red);
+  background: rgba(255, 95, 86, 0.1);
+}
+
+/* 状态徽章（动态跟随高峰状态） */
 .status-badge {
-  background: rgba(39, 201, 63, 0.15);
-  color: var(--green);
-  border: 1px solid var(--green);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border-radius: 20px;
   padding: 2px 10px;
   font-size: 11px;
   font-weight: bold;
   letter-spacing: 0.03em;
+  transition: all 0.3s ease;
+}
+
+.status-badge::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* 正常状态 */
+.status-badge.normal {
+  background: rgba(39, 201, 63, 0.15);
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+.status-badge.normal::before {
+  background: var(--green);
+}
+
+/* 预警状态 */
+.status-badge.warning {
+  background: rgba(255, 189, 46, 0.15);
+  color: var(--yellow);
+  border: 1px solid var(--yellow);
+}
+.status-badge.warning::before {
+  background: var(--yellow);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* 高峰状态 */
+.status-badge.peak {
+  background: rgba(255, 95, 86, 0.15);
+  color: var(--red);
+  border: 1px solid var(--red);
+}
+.status-badge.peak::before {
+  background: var(--red);
+  animation: pulse 1s ease-in-out infinite;
 }
 
 /* ===== 主内容容器 ===== */
 .container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 24px 20px;
+  padding: 20px;
 }
 
 /* ===== 汇总卡片网格 ===== */
@@ -138,6 +217,116 @@ body {
 .card-sub {
   font-size: 11px;
   color: var(--text-secondary);
+}
+
+/* ===== 高峰状态区域（始终可见） ===== */
+.status-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  transition: all 0.4s ease;
+}
+
+/* 状态圆点指示器 */
+.status-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 4px rgba(39, 201, 63, 0.15);
+  transition: all 0.4s ease;
+}
+
+.status-headline {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-bottom: 2px;
+  transition: color 0.4s ease;
+}
+
+.status-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* 正常态 */
+.status-section.normal {
+  background: rgba(39, 201, 63, 0.06);
+  border: 1px solid rgba(39, 201, 63, 0.25);
+}
+.status-section.normal .status-indicator {
+  background: var(--green);
+  box-shadow: 0 0 0 4px rgba(39, 201, 63, 0.15);
+}
+.status-section.normal .status-headline {
+  color: var(--green);
+}
+
+/* 预警态 */
+.status-section.warning {
+  background: rgba(255, 189, 46, 0.08);
+  border: 1px solid rgba(255, 189, 46, 0.35);
+}
+.status-section.warning .status-indicator {
+  background: var(--yellow);
+  box-shadow: 0 0 0 4px rgba(255, 189, 46, 0.2);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.status-section.warning .status-headline {
+  color: var(--yellow);
+}
+
+/* 高峰态 */
+.status-section.peak {
+  background: rgba(255, 95, 86, 0.1);
+  border: 1px solid rgba(255, 95, 86, 0.4);
+}
+.status-section.peak .status-indicator {
+  background: var(--red);
+  box-shadow: 0 0 8px rgba(255, 95, 86, 0.4), 0 0 0 4px rgba(255, 95, 86, 0.2);
+  animation: pulse 1s ease-in-out infinite;
+}
+.status-section.peak .status-headline {
+  color: var(--red);
+}
+
+/* 状态区右侧辅助（订阅对比） */
+.status-aside {
+  margin-left: auto;
+  text-align: right;
+  flex-shrink: 0;
+  padding-left: 20px;
+  border-left: 1px solid var(--border);
+}
+
+.status-aside-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.status-aside-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--green);
+  line-height: 1.2;
+}
+
+.status-aside-detail {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 /* ===== Provider 过滤器 ===== */
@@ -308,7 +497,7 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* ===== 响应式：小屏幕折叠为 2 列 ===== */
+/* ===== 响应式 ===== */
 @media (max-width: 768px) {
   .cards-grid {
     grid-template-columns: repeat(2, 1fr);
