@@ -11,6 +11,7 @@ import { handleAnthropic } from './anthropic.mjs';
 import { handleOpenAI } from './openai.mjs';
 import { handleAPI } from '../api/routes.mjs';
 import { createStore, getDefaultDbPath } from '../db/store.mjs';
+import { startScanner, hasClaudeLogs } from '../scanner/index.mjs';
 
 // 当前文件所在目录（ESM 环境无 __dirname）
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -98,6 +99,11 @@ export function startServer({ port = 7777, dbPath, onLog } = {}) {
 
   // 使用默认日志回调
   const log = onLog || defaultLog;
+
+  // 启动 JSONL 日志扫描器（如果检测到 Claude Code 日志）
+  if (hasClaudeLogs()) {
+    startScanner(store, { onLog: log });
+  }
 
   const server = http.createServer((req, res) => {
     const url = req.url || '/';

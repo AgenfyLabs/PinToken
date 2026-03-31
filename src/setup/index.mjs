@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 import { detectShell, getShellProfilePath, appendEnvToProfile, isConfigured } from './shell.mjs';
 import { setClaudeBaseUrl } from './claude.mjs';
+import { hasClaudeLogs } from '../scanner/index.mjs';
 
 // 代理服务器本地地址
 const ANTHROPIC_BASE_URL = 'http://localhost:7777/anthropic';
@@ -113,7 +114,13 @@ export async function runSetup() {
     console.log(`已更新 .env: ${envPath}`);
   }
 
-  // 6. 打印使用说明
+  // 6. 检测 Claude Code 日志
+  if (hasClaudeLogs()) {
+    console.log('\n检测到 Claude Code 对话日志，已启用日志追踪模式');
+    console.log('即使没有 API Key，也能追踪你的 token 用量');
+  }
+
+  // 7. 打印使用说明
   console.log('\n配置完成！请重启终端或执行以下命令使配置生效：');
   console.log(`  source ${profilePath}`);
   console.log('\n然后启动 Claude Code，流量将通过 PinToken 代理进行追踪。');
