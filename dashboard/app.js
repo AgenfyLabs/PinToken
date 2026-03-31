@@ -60,29 +60,31 @@ async function fetchSummary() {
 
     // 今日 Token 用量
     document.getElementById('todayTokens').textContent =
-      formatNumber(data.todayTokens);
+      formatNumber(data.today_tokens);
     document.getElementById('yesterdayTokens').textContent =
-      formatNumber(data.yesterdayTokens);
+      formatNumber(data.yesterday_tokens);
 
     // 今日花费
     document.getElementById('todayCost').textContent =
-      formatCost(data.todayCost);
+      formatCost(data.today_cost);
     document.getElementById('yesterdayCost').textContent =
-      formatCost(data.yesterdayCost);
+      formatCost(data.yesterday_cost);
 
-    // 本次会话时长（用本地计时，也可以用后端返回值）
-    const sessionMs = data.sessionDuration != null
-      ? data.sessionDuration
-      : Date.now() - sessionStartTime;
-    document.getElementById('sessionTime').textContent = formatTime(sessionMs);
+    // 本次会话时长（后端返回秒数）
+    const sessionSeconds = data.session_seconds || 0;
+    document.getElementById('sessionTime').textContent =
+      formatTime(sessionSeconds * 1000);
 
     // 累计节省
     document.getElementById('totalSaved').textContent =
-      formatCost(data.totalSaved);
-    const pct = data.savedPercent != null
-      ? Number(data.savedPercent).toFixed(1) + '%'
+      formatCost(data.total_saved);
+    // 计算节省百分比
+    const totalBaseline = data.today_cost + data.total_saved;
+    const pct = totalBaseline > 0
+      ? (data.total_saved / totalBaseline * 100).toFixed(1) + '%'
       : '—';
-    document.getElementById('savedPercent').textContent = pct;
+    document.getElementById('savedPercent').textContent =
+      pct !== '—' ? '↑ 省 ' + pct : '—';
 
   } catch (err) {
     // 静默失败，保留旧数据
@@ -124,7 +126,9 @@ async function fetchRequests(provider = '') {
  * @returns {number} 总 token 数
  */
 function calcTotalTokens(rows) {
-  return rows.reduce((sum, row) => sum + (Number(row.tokens) || 0), 0);
+  return rows.reduce((sum, row) => {
+    return sum + (Number(row.input_tokens) || 0) + (Number(row.output_tokens) || 0);
+  }, 0);
 }
 
 /**
@@ -146,7 +150,7 @@ function renderTable(rows) {
   const totalTokens = calcTotalTokens(rows);
 
   rows.forEach(row => {
-    const tokens = Number(row.tokens) || 0;
+    const tokens = (Number(row.input_tokens) || 0) + (Number(row.output_tokens) || 0);
     const pct = totalTokens > 0
       ? ((tokens / totalTokens) * 100).toFixed(1)
       : '0.0';
@@ -175,10 +179,10 @@ function renderTable(rows) {
         </div>
       </td>
       <td>
-        <span class="cost-value">${formatCost(row.cost)}</span>
+        <span class="cost-value">${formatCost(row.cost_usd)}</span>
       </td>
       <td>
-        <span class="saved-value">${formatCost(row.saved)}</span>
+        <span class="saved-value">${row.saved_usd > 0 ? formatCost(row.saved_usd) : '—'}</span>
       </td>
     `;
     tbody.appendChild(tr);
