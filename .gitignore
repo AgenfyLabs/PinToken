@@ -3,3 +3,11 @@ node_modules/
 .env.local
 *.db
 .superpowers/
+
+# 内部开发文件（不展示给用户）
+.claude/
+docs/
+handoff.md
+PinToken_PRD.md
+PinToken_GTM_Plan.md
+pintoken-setup-reference.md
