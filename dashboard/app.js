@@ -483,11 +483,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // 关闭弹窗：点击关闭按钮
   document.getElementById('shareClose').addEventListener('click', () => {
     document.getElementById('shareModal').style.display = 'none';
+    // 隐藏云端链接结果
+    document.getElementById('shareLinkResult').style.display = 'none';
   });
 
   // 关闭弹窗：点击背景遮罩
   document.getElementById('shareBackdrop').addEventListener('click', () => {
     document.getElementById('shareModal').style.display = 'none';
+    // 隐藏云端链接结果
+    document.getElementById('shareLinkResult').style.display = 'none';
   });
 
   // 下载图片：将 Canvas 导出为 PNG 并触发下载
@@ -500,8 +504,68 @@ document.addEventListener('DOMContentLoaded', () => {
     link.click();
   });
 
+  // 缓存当前卡片数据（供上传和分享使用）
+  let _shareData = null;
+
+  // 云端 API 地址（部署后替换为 https://PinToken.ai）
+  const CLOUD_API = '';  // 空字符串表示云端未部署
+
+  // 上传到云端获取永久链接
+  document.getElementById('shareUpload').addEventListener('click', async () => {
+    const uploadBtn = document.getElementById('shareUpload');
+
+    if (!CLOUD_API) {
+      uploadBtn.textContent = '云端即将上线';
+      uploadBtn.disabled = true;
+      setTimeout(() => { uploadBtn.textContent = '上传获取链接'; uploadBtn.disabled = false; }, 2000);
+      return;
+    }
+
+    const canvas = document.querySelector('#sharePreview canvas');
+    if (!canvas || !_shareData) return;
+
+    uploadBtn.textContent = '上传中...';
+    uploadBtn.disabled = true;
+
+    try {
+      // Canvas 转 base64（去掉 data:image/png;base64, 前缀）
+      const imageData = canvas.toDataURL('image/png').split(',')[1];
+
+      const res = await fetch(CLOUD_API + '/api/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ..._shareData,
+          image_data: imageData,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Upload failed');
+      const { url } = await res.json();
+
+      // 显示链接
+      document.getElementById('shareLinkInput').value = url;
+      document.getElementById('shareLinkResult').style.display = 'flex';
+      uploadBtn.textContent = '已上传 ✓';
+    } catch (err) {
+      console.warn('[PinToken] upload failed:', err.message);
+      uploadBtn.textContent = '上传失败';
+    }
+
+    setTimeout(() => { uploadBtn.textContent = '上传获取链接'; uploadBtn.disabled = false; }, 3000);
+  });
+
+  // 复制链接
+  document.getElementById('shareLinkCopy').addEventListener('click', () => {
+    const input = document.getElementById('shareLinkInput');
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = document.getElementById('shareLinkCopy');
+      btn.textContent = '已复制 ✓';
+      setTimeout(() => { btn.textContent = '复制'; }, 1500);
+    });
+  });
+
   // 多平台分享（动态文案 + X 分享自动下载图片）
-  let _shareData = null; // 缓存当前卡片数据
 
   // 保存 share data 供分享按钮使用
   const origShareClick = document.getElementById('shareBtn').onclick;

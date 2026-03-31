@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 分享卡片记录（只存脱敏统计数据，无 API Key）
+model Card {
+  id               String   @id @default(cuid())
+  shortId          String   @unique           // nanoid 短链接 ID
+  monthLabel       String                     // 月份标签 如 "2026-03"
+  monthCost        Float                      // 本月 API 等值花费
+  subscriptionCost Float                      // 订阅月费
+  saved            Float                      // 节省金额
+  savedPct         Float                      // 节省百分比
+  monthRequests    Int                        // 本月请求数
+  monthTokens      BigInt                     // 本月 token 总数
+  topModel         String                     // 最常用模型
+  imageData        String   @db.Text          // Base64 PNG 图片数据
+  createdAt        DateTime @default(now())
+}
