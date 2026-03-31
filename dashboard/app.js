@@ -503,8 +503,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 缓存当前卡片数据
   let _shareData = null;
 
-  // 云端 API 地址（部署后替换为 https://PinToken.ai）
-  const CLOUD_API = '';
+  // 云端 API 地址
+  const CLOUD_API = 'https://pintoken-cloud.vercel.app';
 
   /**
    * 后台自动上传卡片到云端，返回卡片公开 URL
