@@ -82,6 +82,31 @@ export async function handleAPI(req, res, store, startedAt) {
       return;
     }
 
+    // GET /api/analytics/trend — 近 N 天每日花费趋势
+    if (pathname === '/api/analytics/trend' && req.method === 'GET') {
+      const days = parseInt(url.searchParams.get('days'), 10) || 30;
+      const trend = await store.getDailyTrend(days);
+      res.writeHead(200);
+      res.end(JSON.stringify(trend));
+      return;
+    }
+
+    // GET /api/analytics/models — 模型使用分布
+    if (pathname === '/api/analytics/models' && req.method === 'GET') {
+      const models = await store.getModelDistribution();
+      res.writeHead(200);
+      res.end(JSON.stringify(models));
+      return;
+    }
+
+    // GET /api/analytics/providers — 各 Provider 详情
+    if (pathname === '/api/analytics/providers' && req.method === 'GET') {
+      const providers = await store.getProviderDetails();
+      res.writeHead(200);
+      res.end(JSON.stringify(providers));
+      return;
+    }
+
     // 未知路径 → 404
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'Not found' }));

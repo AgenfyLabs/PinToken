@@ -282,6 +282,66 @@ export function createStore(dbPath) {
   }
 
   /**
+   * 获取近 N 天每日花费趋势
+   * @param {number} days - 天数，默认 30
+   * @returns {Array<{ date, cost, tokens, requests }>}
+   */
+  function getDailyTrend(days = 30) {
+    const since = new Date();
+    since.setUTCDate(since.getUTCDate() - days);
+    const sinceStr = since.toISOString().slice(0, 10);
+
+    const stmt = db.prepare(`
+      SELECT SUBSTR(timestamp, 1, 10) AS date,
+             COALESCE(SUM(cost_usd), 0) AS cost,
+             COALESCE(SUM(input_tokens + output_tokens + cache_read_tokens + cache_write_tokens), 0) AS tokens,
+             COUNT(*) AS requests
+      FROM requests
+      WHERE SUBSTR(timestamp, 1, 10) >= ?
+      GROUP BY SUBSTR(timestamp, 1, 10)
+      ORDER BY date ASC
+    `);
+    return stmt.all(sinceStr);
+  }
+
+  /**
+   * 获取模型使用分布（按 token 量排序，最多 10 条）
+   * @returns {Array<{ model, provider, total_tokens, total_cost, request_count }>}
+   */
+  function getModelDistribution() {
+    const stmt = db.prepare(`
+      SELECT model, provider,
+             COALESCE(SUM(input_tokens + output_tokens + cache_read_tokens + cache_write_tokens), 0) AS total_tokens,
+             COALESCE(SUM(cost_usd), 0) AS total_cost,
+             COUNT(*) AS request_count
+      FROM requests
+      GROUP BY model
+      ORDER BY total_tokens DESC
+      LIMIT 10
+    `);
+    return stmt.all();
+  }
+
+  /**
+   * 获取各 Provider 详情（按 token 量排序）
+   * @returns {Array<{ provider, request_count, total_tokens, total_cost, first_seen, last_seen }>}
+   */
+  function getProviderDetails() {
+    const stmt = db.prepare(`
+      SELECT provider,
+             COUNT(*) AS request_count,
+             COALESCE(SUM(input_tokens + output_tokens + cache_read_tokens + cache_write_tokens), 0) AS total_tokens,
+             COALESCE(SUM(cost_usd), 0) AS total_cost,
+             MIN(timestamp) AS first_seen,
+             MAX(timestamp) AS last_seen
+      FROM requests
+      GROUP BY provider
+      ORDER BY total_tokens DESC
+    `);
+    return stmt.all();
+  }
+
+  /**
    * 关闭数据库连接
    */
   function close() {
@@ -295,6 +355,9 @@ export function createStore(dbPath) {
     getMonthSummary,
     getProviderStats,
     getStatusData,
+    getDailyTrend,
+    getModelDistribution,
+    getProviderDetails,
     getOffset,
     setOffset,
     hasRequest,
