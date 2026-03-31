@@ -579,3 +579,115 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== 分享按钮 ===== */
+.share-btn {
+  background: var(--orange);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.share-btn:hover { opacity: 0.85; }
+
+/* ===== 分享弹窗 ===== */
+.share-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.share-modal-content {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 650px;
+  width: 90%;
+  z-index: 1;
+}
+
+.share-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.share-modal-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.share-modal-close {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: #888;
+  font-size: 13px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.share-modal-close:hover { color: var(--red); border-color: var(--red); }
+
+.share-modal-preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.share-modal-preview canvas {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.share-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.share-action-btn {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: bold;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s ease;
+}
+.share-action-btn:hover { opacity: 0.85; }
+
+.share-action-download {
+  background: var(--green);
+  color: #fff;
+}
+.share-action-tweet {
+  background: #1DA1F2;
+  color: #fff;
+}

@@ -107,6 +107,26 @@ export async function handleAPI(req, res, store, startedAt) {
       return;
     }
 
+    // GET /api/share-data — 返回生成分享卡片所需的全部数据
+    if (pathname === '/api/share-data' && req.method === 'GET') {
+      const month = await store.getMonthSummary();
+      const models = await store.getModelDistribution();
+      const topModel = models.length > 0 ? models[0].model : 'unknown';
+
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        month_cost: month.month_cost,
+        subscription_cost: 100,  // Max 月费
+        saved: Math.max(month.month_cost - 100, 0),
+        saved_pct: month.month_cost > 0 ? ((month.month_cost - 100) / month.month_cost * 100) : 0,
+        month_requests: month.month_requests,
+        month_tokens: month.month_tokens,
+        top_model: topModel,
+        month_label: month.month_label,
+      }));
+      return;
+    }
+
     // 未知路径 → 404
     res.writeHead(404);
     res.end(JSON.stringify({ error: 'Not found' }));

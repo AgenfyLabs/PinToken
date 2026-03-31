@@ -6,6 +6,7 @@
   <title>PinToken Dashboard</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="providers.css" />
+  <script src="share-card.js"></script>
 </head>
 <body>
 
@@ -19,6 +20,7 @@
       <span class="brand">PinToken</span>
     </div>
     <div class="topbar-right">
+      <button class="share-btn" id="shareBtn" title="生成分享卡片">📤 分享</button>
       <button class="close-btn" id="closeBtn" title="关闭">✕</button>
     </div>
   </header>
@@ -144,6 +146,24 @@
   </main>
 
   </div><!-- /.window -->
+
+  <!-- 分享卡片弹窗 -->
+  <div class="share-modal" id="shareModal" style="display:none">
+    <div class="share-modal-backdrop" id="shareBackdrop"></div>
+    <div class="share-modal-content">
+      <div class="share-modal-header">
+        <span class="share-modal-title">分享你的省钱报告</span>
+        <button class="share-modal-close" id="shareClose">✕</button>
+      </div>
+      <div class="share-modal-preview" id="sharePreview">
+        <!-- Canvas 渲染的卡片预览 -->
+      </div>
+      <div class="share-modal-actions">
+        <button class="share-action-btn share-action-download" id="shareDownload">📥 下载图片</button>
+        <button class="share-action-btn share-action-tweet" id="shareTweet">🐦 发推文</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
   <script src="providers.js"></script>

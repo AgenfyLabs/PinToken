@@ -458,4 +458,51 @@ document.addEventListener('DOMContentLoaded', () => {
       window.close();
     }
   });
+
+  // ===== 分享卡片功能 =====
+
+  // 分享按钮 → 打开弹窗，拉取数据并渲染卡片
+  document.getElementById('shareBtn').addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/share-data');
+      if (!res.ok) throw new Error('fetch failed');
+      const data = await res.json();
+
+      // 调用另一个 Agent 创建的 generateShareCard 函数
+      const canvas = window.generateShareCard(data);
+      const preview = document.getElementById('sharePreview');
+      preview.innerHTML = '';
+      preview.appendChild(canvas);
+
+      document.getElementById('shareModal').style.display = 'flex';
+    } catch (err) {
+      console.warn('[PinToken] share card error:', err.message);
+    }
+  });
+
+  // 关闭弹窗：点击关闭按钮
+  document.getElementById('shareClose').addEventListener('click', () => {
+    document.getElementById('shareModal').style.display = 'none';
+  });
+
+  // 关闭弹窗：点击背景遮罩
+  document.getElementById('shareBackdrop').addEventListener('click', () => {
+    document.getElementById('shareModal').style.display = 'none';
+  });
+
+  // 下载图片：将 Canvas 导出为 PNG 并触发下载
+  document.getElementById('shareDownload').addEventListener('click', () => {
+    const canvas = document.querySelector('#sharePreview canvas');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = 'pintoken-savings.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+
+  // 发推文：打开 Twitter Intent 链接
+  document.getElementById('shareTweet').addEventListener('click', () => {
+    const text = encodeURIComponent('I saved money on AI APIs with PinToken! 🪙\nTrack your LLM spending → pintoken.io\n#PinToken #AIcosts');
+    window.open('https://twitter.com/intent/tweet?text=' + text, '_blank');
+  });
 });
