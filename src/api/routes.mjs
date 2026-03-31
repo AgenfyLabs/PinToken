@@ -1,0 +1,67 @@
+/**
+ * Dashboard 数据 API 路由处理
+ * 处理所有 /api/* 请求
+ */
+
+/**
+ * 统一设置响应头
+ */
+function setHeaders(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Content-Type', 'application/json');
+}
+
+/**
+ * 主路由处理函数
+ * @param {object} req - HTTP 请求对象
+ * @param {object} res - HTTP 响应对象
+ * @param {object} store - 数据存储实例
+ * @param {number} startedAt - 服务启动时间戳（毫秒）
+ */
+export async function handleAPI(req, res, store, startedAt) {
+  setHeaders(res);
+
+  try {
+    // 解析 URL 和查询参数
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = url.pathname;
+
+    // GET /api/summary — 返回汇总统计，附加会话秒数
+    if (pathname === '/api/summary' && req.method === 'GET') {
+      const summary = await store.getSummary();
+      const session_seconds = Math.floor((Date.now() - startedAt) / 1000);
+      res.writeHead(200);
+      res.end(JSON.stringify({ ...summary, session_seconds }));
+      return;
+    }
+
+    // GET /api/requests — 返回请求记录列表，支持分页和 provider 过滤
+    if (pathname === '/api/requests' && req.method === 'GET') {
+      const providerParam = url.searchParams.get('provider');
+      const provider = providerParam === '' || providerParam === null ? undefined : providerParam;
+      const limit = parseInt(url.searchParams.get('limit'), 10) || 50;
+      const offset = parseInt(url.searchParams.get('offset'), 10) || 0;
+
+      const requests = await store.getRequests({ provider, limit, offset });
+      res.writeHead(200);
+      res.end(JSON.stringify(requests));
+      return;
+    }
+
+    // GET /api/providers — 返回各 provider 统计数据
+    if (pathname === '/api/providers' && req.method === 'GET') {
+      const providers = await store.getProviderStats();
+      res.writeHead(200);
+      res.end(JSON.stringify(providers));
+      return;
+    }
+
+    // 未知路径 → 404
+    res.writeHead(404);
+    res.end(JSON.stringify({ error: 'Not found' }));
+  } catch (err) {
+    // 服务端错误 → 500
+    res.writeHead(500);
+    res.end(JSON.stringify({ error: err.message }));
+  }
+}
