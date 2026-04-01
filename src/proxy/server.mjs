@@ -9,6 +9,7 @@ import { join, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleAnthropic } from './anthropic.mjs';
 import { handleOpenAI } from './openai.mjs';
+import { handleHealth } from './health.mjs';
 import { handleAPI } from '../api/routes.mjs';
 import { createStore, getDefaultDbPath } from '../db/store.mjs';
 import { startScanner, hasClaudeLogs } from '../scanner/index.mjs';
@@ -127,7 +128,9 @@ export function startServer({ port = 7777, dbPath, onLog } = {}) {
     const matchedProvider = OPENAI_COMPAT_PROVIDERS.find((p) => url.startsWith(p.prefix));
 
     // 路由分发（按优先级顺序匹配）
-    if (url.startsWith('/anthropic/')) {
+    if (url === '/health') {
+      handleHealth(req, res, startedAt);
+    } else if (url.startsWith('/anthropic/')) {
       handleAnthropic(req, res, store, log);
     } else if (matchedProvider) {
       // 转发到匹配的 OpenAI 兼容 Provider

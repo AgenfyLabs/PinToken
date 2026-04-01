@@ -6,6 +6,7 @@
 
 import https from 'node:https';
 import { nanoid } from 'nanoid';
+import { directProxy } from './fallback.mjs';
 import { parseOpenAISSE, parseOpenAIResponse } from './streaming.mjs';
 import { calculateCost } from '../pricing/calculator.mjs';
 
@@ -156,11 +157,8 @@ export function handleOpenAI(clientReq, clientRes, store, onLog, { baseUrl, prov
     // 代理请求出错时返回 502
     proxyReq.on('error', (err) => {
       console.error(`[${provider}-proxy] 转发请求失败:`, err.message);
-
-      if (!clientRes.headersSent) {
-        clientRes.writeHead(502, { 'Content-Type': 'application/json' });
-      }
-      clientRes.end(JSON.stringify({ error: 'Bad Gateway', message: err.message }));
+      // 自动回退：直连上游 API
+      directProxy(targetHostname, targetPath, clientReq.method, clientReq.headers, bodyBuffer, clientRes);
     });
 
     // 将请求体写入代理请求

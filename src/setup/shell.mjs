@@ -140,3 +140,25 @@ export function isConfigured(profilePath) {
   const content = readFileSync(profilePath, 'utf-8');
   return content.includes(MARKER);
 }
+
+/**
+ * 从 shell profile 中移除 PinToken 标记的环境变量行
+ * @param {string} profilePath - profile 文件路径
+ * @param {string} key - 环境变量名（如 ANTHROPIC_BASE_URL）
+ * @returns {'removed'|'not_found'} 操作结果
+ */
+export function removeEnvFromProfile(profilePath, key) {
+  if (!existsSync(profilePath)) return 'not_found';
+
+  const content = readFileSync(profilePath, 'utf-8');
+  const markedRegex = new RegExp(
+    `\\n?^export ${escapeRegExp(key)}=.*${escapeRegExp(MARKER)}\\n?`,
+    'gm'
+  );
+
+  if (!markedRegex.test(content)) return 'not_found';
+
+  const cleaned = content.replace(markedRegex, '\n').replace(/\n{3,}/g, '\n\n');
+  writeFileSync(profilePath, cleaned);
+  return 'removed';
+}

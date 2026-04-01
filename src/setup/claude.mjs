@@ -41,3 +41,19 @@ export function setClaudeBaseUrl(baseUrl) {
   writeClaudeSettings(settings);
   return CLAUDE_SETTINGS_PATH;
 }
+
+/**
+ * 从 Claude Code settings.json 中移除 PinToken 注入的 ANTHROPIC_BASE_URL
+ * 返回是否实际移除了配置
+ */
+export function removeClaudeBaseUrl() {
+  const settings = readClaudeSettings();
+  if (!settings.env || !settings.env.ANTHROPIC_BASE_URL) return false;
+  delete settings.env.ANTHROPIC_BASE_URL;
+  // 如果 env 对象为空，也删除 env 键本身
+  if (Object.keys(settings.env).length === 0) {
+    delete settings.env;
+  }
+  writeClaudeSettings(settings);
+  return true;
+}

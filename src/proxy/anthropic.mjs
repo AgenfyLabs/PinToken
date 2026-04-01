@@ -5,6 +5,7 @@
 
 import https from 'node:https';
 import { nanoid } from 'nanoid';
+import { directProxy } from './fallback.mjs';
 import { parseAnthropicSSE, parseAnthropicResponse } from './streaming.mjs';
 import { calculateCost } from '../pricing/calculator.mjs';
 
@@ -195,12 +196,8 @@ export function handleAnthropic(clientReq, clientRes, store, onLog) {
     // 代理请求出错时返回 502
     proxyReq.on('error', (err) => {
       console.error('[anthropic proxy] 上游请求失败:', err.message);
-
-      // 若响应头还未发送，返回 502
-      if (!clientRes.headersSent) {
-        clientRes.writeHead(502, { 'Content-Type': 'application/json' });
-      }
-      clientRes.end(JSON.stringify({ error: 'Bad Gateway', message: err.message }));
+      // 自动回退：直连 Anthropic API
+      directProxy('api.anthropic.com', upstreamPath, clientReq.method, clientReq.headers, bodyBuffer, clientRes);
     });
 
     // 将请求体写入上游请求
