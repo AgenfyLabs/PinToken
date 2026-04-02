@@ -10,12 +10,14 @@ import { join, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleAnthropic } from './anthropic.mjs';
 import { handleOpenAI } from './openai.mjs';
-import { handleHealth } from './health.mjs';
+import { handleHealth, startSelfHealthCheck } from './health.mjs';
 import { handleAPI } from '../api/routes.mjs';
 import { createStore, getDefaultDbPath } from '../db/store.mjs';
 import { startScanner } from '../scanner/index.mjs';
 import { startPeakNotifier } from '../notify/peak.mjs';
 import { getProxyState } from './config-manager.mjs';
+import { withBypass, createAnthropicFallback, createOpenAIFallback } from './bypass.mjs';
+import { detectLegacyProxyConfig } from '../setup/index.mjs';
 
 // 当前文件所在目录（ESM 环境无 __dirname）
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -99,6 +101,13 @@ function serveStatic(urlPath, res) {
  * @returns {Promise<{ server, store, port }>}
  */
 export function startServer({ port = 7777, dbPath, onLog } = {}) {
+  // 启动时残留清理：检查上次异常退出是否遗留了代理配置
+  try {
+    detectLegacyProxyConfig();
+  } catch {
+    // 残留检测失败不影响启动
+  }
+
   // 初始化数据存储
   const store = createStore(dbPath || getDefaultDbPath());
 
@@ -114,61 +123,77 @@ export function startServer({ port = 7777, dbPath, onLog } = {}) {
   // 启动高峰时段 macOS 系统通知（每 5 分钟检查，状态变化时推送）
   startPeakNotifier();
 
+  // 启动自我健康检查（容错第三层），连续失败自动降级
+  startSelfHealthCheck(port);
+
+  // 预创建 Anthropic bypass fallback（容错第一层）
+  const anthropicFallback = createAnthropicFallback();
+  const safeHandleAnthropic = withBypass(handleAnthropic, anthropicFallback);
+
+  // OpenAI 兼容格式 Provider 路由映射表
+  const OPENAI_COMPAT_PROVIDERS = [
+    { prefix: '/openai/',    baseUrl: 'https://api.openai.com/v1',                              providerName: 'openai' },
+    { prefix: '/xai/',       baseUrl: 'https://api.x.ai/v1',                                    providerName: 'xai' },
+    { prefix: '/gemini/',    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', providerName: 'gemini' },
+    { prefix: '/moonshot/',  baseUrl: 'https://api.moonshot.cn/v1',                              providerName: 'moonshot' },
+    { prefix: '/qwen/',      baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',       providerName: 'qwen' },
+    { prefix: '/glm/',       baseUrl: 'https://open.bigmodel.cn/api/paas/v4',                    providerName: 'glm' },
+    { prefix: '/deepseek/',  baseUrl: 'https://api.deepseek.com/v1',                             providerName: 'deepseek' },
+  ];
+
+  // 为每个 Provider 预创建 fallback 和包装后的 handler
+  const openAIHandlers = new Map();
+  for (const p of OPENAI_COMPAT_PROVIDERS) {
+    const routePrefix = p.prefix.slice(0, -1);
+    const fallback = createOpenAIFallback(p.baseUrl, routePrefix);
+    const safeHandler = withBypass(
+      (req, res, ...args) => handleOpenAI(req, res, ...args, {
+        baseUrl: p.baseUrl,
+        providerName: p.providerName,
+        routePrefix,
+      }),
+      fallback,
+    );
+    openAIHandlers.set(p.prefix, safeHandler);
+  }
+
   const server = http.createServer((req, res) => {
     const url = req.url || '/';
 
-    // OpenAI 兼容格式 Provider 路由映射表
-    const OPENAI_COMPAT_PROVIDERS = [
-      { prefix: '/openai/',    baseUrl: 'https://api.openai.com/v1',                              providerName: 'openai' },
-      { prefix: '/xai/',       baseUrl: 'https://api.x.ai/v1',                                    providerName: 'xai' },
-      { prefix: '/gemini/',    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', providerName: 'gemini' },
-      { prefix: '/moonshot/',  baseUrl: 'https://api.moonshot.cn/v1',                              providerName: 'moonshot' },
-      { prefix: '/qwen/',      baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',       providerName: 'qwen' },
-      { prefix: '/glm/',       baseUrl: 'https://open.bigmodel.cn/api/paas/v4',                    providerName: 'glm' },
-      { prefix: '/deepseek/',  baseUrl: 'https://api.deepseek.com/v1',                             providerName: 'deepseek' },
-    ];
-
     // 匹配 OpenAI 兼容 Provider
     const matchedProvider = OPENAI_COMPAT_PROVIDERS.find((p) => url.startsWith(p.prefix));
-
-    // 检查 Proxy 模式是否启用（仅代理路由需要检查）
-    const isProxyRoute = url.startsWith('/anthropic/') || matchedProvider;
-    const proxyEnabled = getProxyState().enabled;
 
     // 路由分发（按优先级顺序匹配）
     if (url === '/health') {
       handleHealth(req, res, startedAt);
     } else if (url.startsWith('/anthropic/')) {
-      if (!proxyEnabled) {
+      // 检查 Proxy 模式是否启用
+      if (!getProxyState().enabled) {
         res.writeHead(503, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           error: 'Proxy 模式未启用。运行 pintoken proxy --enable 启用',
         }));
         return;
       }
-      handleAnthropic(req, res, store, log);
+      // 使用 bypass 包装的处理器（容错第一层）
+      safeHandleAnthropic(req, res, store, log);
     } else if (matchedProvider) {
-      if (!proxyEnabled) {
+      if (!getProxyState().enabled) {
         res.writeHead(503, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           error: 'Proxy 模式未启用。运行 pintoken proxy --enable 启用',
         }));
         return;
       }
-      // 转发到匹配的 OpenAI 兼容 Provider
-      handleOpenAI(req, res, store, log, {
-        baseUrl: matchedProvider.baseUrl,
-        providerName: matchedProvider.providerName,
-        routePrefix: matchedProvider.prefix.slice(0, -1), // 去掉末尾斜杠，如 "/openai/" → "/openai"
-      });
+      // 使用 bypass 包装的处理器（容错第一层）
+      const safeHandler = openAIHandlers.get(matchedProvider.prefix);
+      safeHandler(req, res, store, log);
     } else if (url.startsWith('/api/')) {
       handleAPI(req, res, store, startedAt);
     } else if (url.startsWith('/dashboard')) {
-      // 去掉 /dashboard 前缀，让 serveStatic 在 DASHBOARD_DIR 中正确定位文件
       const dashPath = url.slice('/dashboard'.length) || '/';
       serveStatic(dashPath, res);
     } else {
-      // 根路径或其他路径也尝试 Dashboard 静态文件
       serveStatic(url, res);
     }
   });

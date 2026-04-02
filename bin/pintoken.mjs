@@ -12,6 +12,15 @@ import { createStore, getDefaultDbPath } from '../src/db/store.mjs';
 import { renderStatusPanel } from '../src/cli/status.mjs';
 import { removeClaudeBaseUrl } from '../src/setup/claude.mjs';
 import { removeEnvFromProfile, detectShell, getShellProfilePath } from '../src/setup/shell.mjs';
+import { stopSelfHealthCheck } from '../src/proxy/health.mjs';
+
+// 预加载 config-manager（可能尚未创建，加载失败时为 null）
+let configManager = null;
+try {
+  configManager = await import('../src/proxy/config-manager.mjs');
+} catch {
+  // config-manager.mjs 尚未创建，静默跳过
+}
 
 const VERSION = '0.1.0';
 const PORT = 7777;
@@ -67,21 +76,40 @@ async function runServer() {
   // 写入 PID 文件，供 stop 命令使用
   writeFileSync(PID_FILE, String(process.pid));
 
-  // 注册优雅退出信号处理：清理 PID 文件
+  // 恢复 Proxy 配置的同步辅助函数（容错第二层）
+  const restoreProxyConfig = () => {
+    try {
+      if (configManager && configManager.getProxyState && configManager.disableProxy) {
+        const state = configManager.getProxyState();
+        if (state && state.enabled) {
+          configManager.disableProxy();
+          console.log('已自动恢复 Proxy 配置');
+        }
+      }
+    } catch {
+      // 恢复失败不影响退出流程
+    }
+  };
+
+  // 注册优雅退出信号处理：恢复 Proxy 配置 + 停止健康检查 + 清理 PID 文件
   const handleExit = () => {
     console.log('\n正在关闭 PinToken 服务器...');
+    restoreProxyConfig();
+    try { stopSelfHealthCheck(); } catch {}
     try { unlinkSync(PID_FILE); } catch {}
     process.exit(0);
   };
   process.on('SIGINT', handleExit);
   process.on('SIGTERM', handleExit);
 
-  // 未捕获异常：记录到错误日志，清理 PID，退出
+  // 未捕获异常：恢复配置 + 记录错误日志 + 清理 PID + 退出
   process.on('uncaughtException', (err) => {
     const errorLog = join(homedir(), '.pintoken', 'error.log');
     const entry = `[${new Date().toISOString()}] ${err.stack || err.message}\n`;
     try { appendFileSync(errorLog, entry); } catch {}
     console.error('致命错误:', err.message);
+    restoreProxyConfig();
+    try { stopSelfHealthCheck(); } catch {}
     try { unlinkSync(PID_FILE); } catch {}
     process.exit(1);
   });
