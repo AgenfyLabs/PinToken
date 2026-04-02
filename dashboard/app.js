@@ -413,8 +413,9 @@ function initTabs() {
       tab.classList.add('active');
       // 切换面板可见性
       panels.forEach(p => p.style.display = p.dataset.tab === tab.dataset.tab ? '' : 'none');
-      // 切换到 analytics 时拉取数据
+      // 切换到对应 tab 时拉取数据
       if (tab.dataset.tab === 'analytics') fetchAnalytics();
+      if (tab.dataset.tab === 'providers') fetchProviders();
     });
   });
 }
