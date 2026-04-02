@@ -11,3 +11,6 @@ handoff.md
 PinToken_PRD.md
 PinToken_GTM_Plan.md
 pintoken-setup-reference.md
+.gstack/
+.vercel
+.playwright-mcp/
