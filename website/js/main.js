@@ -176,11 +176,25 @@
 
   // ========== 初始化 ==========
 
+  /**
+   * 语言切换按钮点击时标记手动选择，
+   * 防止自动跳转覆盖用户选择
+   */
+  function initLangOverride() {
+    var langLinks = document.querySelectorAll('.nav-lang a');
+    langLinks.forEach(function (link) {
+      link.addEventListener('click', function () {
+        sessionStorage.setItem('lang-override', '1');
+      });
+    });
+  }
+
   function init() {
     initCopyButton();
     initSmoothScroll();
     initNavCTA();
     initMobileMenu();
+    initLangOverride();
   }
 
   // DOM 加载完成后初始化

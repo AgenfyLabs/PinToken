@@ -15,6 +15,16 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://pintoken.ai">
 
+  <!-- 浏览器语言自动跳转：中文用户 → /zh/ -->
+  <script>
+    (function(){
+      var lang = navigator.language || navigator.userLanguage || '';
+      if (lang.startsWith('zh') && !sessionStorage.getItem('lang-override')) {
+        location.replace('/zh/');
+      }
+    })();
+  </script>
+
   <!-- 外链样式和脚本 -->
   <link rel="stylesheet" href="css/style.css">
   <script src="js/main.js" defer></script>
