@@ -44,7 +44,7 @@ PinToken v${VERSION} — 本地 LLM API 用量追踪代理
   pintoken [命令]
 
 命令:
-  setup     初始化配置并启动代理服务器（默认）
+  setup     初始化并启动（默认 Scanner 模式，--proxy 启用代理模式）
   start     直接启动代理服务器（跳过配置写入）
   stop      停止代理服务器
   status    显示终端用量状态面板
@@ -131,8 +131,9 @@ async function main() {
 
   switch (command) {
     case 'setup': {
-      // 先执行配置写入，再启动服务器
-      await runSetup();
+      // 解析 --proxy flag，决定 Scanner 模式（默认）还是 Proxy 模式
+      const proxyFlag = process.argv.includes('--proxy');
+      await runSetup({ proxy: proxyFlag });
       await runServer();
       break;
     }
