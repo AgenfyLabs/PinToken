@@ -6,6 +6,7 @@
   <title>PinToken Dashboard</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="providers.css" />
+  <script src="share-card-skins.js"></script>
   <script src="share-card.js"></script>
 </head>
 <body>
@@ -195,19 +196,28 @@
 
   </div><!-- /.window -->
 
-  <!-- 分享卡片弹窗 -->
+  <!-- 分享卡片弹窗 V2 -->
   <div class="share-modal" id="shareModal" style="display:none">
     <div class="share-modal-backdrop" id="shareBackdrop"></div>
     <div class="share-modal-content">
       <div class="share-modal-header">
-        <span class="share-modal-title">分享你的省钱报告</span>
+        <span class="share-modal-title">生成分享卡片</span>
         <button class="share-modal-close" id="shareClose">✕</button>
       </div>
       <div class="share-modal-preview" id="sharePreview">
         <!-- Canvas 渲染的卡片预览 -->
       </div>
+      <!-- 皮肤选择器 -->
+      <div class="skin-selector">
+        <button class="skin-btn active" data-skin="terminal">终端</button>
+        <button class="skin-btn" data-skin="neon">霓虹</button>
+        <button class="skin-btn" data-skin="minimal">极简</button>
+        <button class="skin-btn" data-skin="gradient">渐变</button>
+        <button class="skin-btn" data-skin="blueprint">蓝图</button>
+      </div>
       <div class="share-modal-actions">
         <button class="share-action-btn share-action-download" id="shareDownload">下载图片</button>
+        <button class="share-action-btn share-action-copy" id="shareCopy">复制图片</button>
       </div>
       <div class="share-modal-divider"></div>
       <div class="share-modal-label">分享到</div>
@@ -218,6 +228,7 @@
         <button class="share-platform" data-platform="hackernews" title="Hacker News">Y</button>
         <button class="share-platform" data-platform="copy" title="复制链接">⎘</button>
       </div>
+      <div class="share-footer-note">pintoken.ai · 数据仅存本地</div>
     </div>
   </div>
 

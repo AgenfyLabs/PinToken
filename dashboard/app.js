@@ -11,6 +11,8 @@ let sessionStartTime = Date.now(); // 会话开始时间（页面加载时）
 let lastRecordsFound = 0;       // 上次扫描发现的记录数（用于检测首条数据）
 let scanCompleteShown = false;   // 扫描完成提示是否已显示过
 let currentMode = 'log_observer'; // 当前数据采集模式
+let currentSkin = localStorage.getItem('pintoken-skin') || 'terminal'; // 当前分享卡片皮肤
+let shareData = null;             // 缓存分享卡片数据
 
 // ===== 格式化工具函数 =====
 
@@ -628,25 +630,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ===== 分享卡片功能 =====
+  // ===== 分享卡片功能 V2 =====
+
+  /**
+   * 渲染分享卡片到预览区域
+   * 调用 generateShareCard(data, skinName) 获取 2160×2160 canvas，CSS 缩放到 420px
+   */
+  function renderShareCard() {
+    if (!shareData) return;
+    const canvas = window.generateShareCard(shareData, currentSkin);
+    canvas.style.width = '100%';
+    canvas.style.maxWidth = '420px';
+    const preview = document.getElementById('sharePreview');
+    preview.innerHTML = '';
+    preview.appendChild(canvas);
+  }
 
   // 分享按钮 → 打开弹窗，拉取数据并渲染卡片
   document.getElementById('shareBtn').addEventListener('click', async () => {
     try {
       const res = await fetch('/api/share-data');
       if (!res.ok) throw new Error('fetch failed');
-      const data = await res.json();
-
-      // 调用另一个 Agent 创建的 generateShareCard 函数
-      const canvas = window.generateShareCard(data);
-      const preview = document.getElementById('sharePreview');
-      preview.innerHTML = '';
-      preview.appendChild(canvas);
-
+      shareData = await res.json();
+      renderShareCard();
+      // 根据 currentSkin 设置皮肤按钮 active 状态
+      document.querySelectorAll('.skin-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.skin === currentSkin);
+      });
       document.getElementById('shareModal').style.display = 'flex';
     } catch (err) {
       console.warn('[PinToken] share card error:', err.message);
     }
+  });
+
+  // 皮肤按钮点击：切换皮肤并重新渲染
+  document.querySelectorAll('.skin-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentSkin = btn.dataset.skin;
+      localStorage.setItem('pintoken-skin', currentSkin);
+      // 更新按钮 active 状态
+      document.querySelectorAll('.skin-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderShareCard();
+    });
   });
 
   // 关闭弹窗：点击关闭按钮
@@ -659,18 +685,49 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('shareModal').style.display = 'none';
   });
 
-  // 下载图片：将 Canvas 导出为 PNG 并触发下载
+  // 下载图片：导出 1080×1080 PNG（从 2160 缩放）
   document.getElementById('shareDownload').addEventListener('click', () => {
-    const canvas = document.querySelector('#sharePreview canvas');
-    if (!canvas) return;
+    const srcCanvas = document.querySelector('#sharePreview canvas');
+    if (!srcCanvas) return;
+    // 创建 1080×1080 临时 canvas，从 2160×2160 缩放
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = 1080;
+    exportCanvas.height = 1080;
+    const ctx = exportCanvas.getContext('2d');
+    ctx.drawImage(srcCanvas, 0, 0, 1080, 1080);
+    // 生成文件名 pintoken-YYYY-MM.png
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
     const link = document.createElement('a');
-    link.download = 'pintoken-savings.png';
-    link.href = canvas.toDataURL('image/png');
+    link.download = `pintoken-${yyyy}-${mm}.png`;
+    link.href = exportCanvas.toDataURL('image/png');
     link.click();
   });
 
-  // 缓存当前卡片数据
-  let _shareData = null;
+  // 复制图片：canvas.toBlob → clipboard
+  document.getElementById('shareCopy').addEventListener('click', async () => {
+    const srcCanvas = document.querySelector('#sharePreview canvas');
+    if (!srcCanvas) return;
+    const btn = document.getElementById('shareCopy');
+    // 创建 1080×1080 临时 canvas
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = 1080;
+    exportCanvas.height = 1080;
+    const ctx = exportCanvas.getContext('2d');
+    ctx.drawImage(srcCanvas, 0, 0, 1080, 1080);
+    try {
+      const blob = await new Promise(resolve => exportCanvas.toBlob(resolve, 'image/png'));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      btn.textContent = '已复制 ✓';
+      setTimeout(() => { btn.textContent = '复制图片'; }, 1500);
+    } catch (err) {
+      // fallback：提示用户下载
+      console.warn('[PinToken] 复制图片失败，请使用下载:', err.message);
+      btn.textContent = '请下载';
+      setTimeout(() => { btn.textContent = '复制图片'; }, 1500);
+    }
+  });
 
   // 云端 API 地址
   const CLOUD_API = 'https://pintoken-cloud.vercel.app';
@@ -680,7 +737,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * 云端未部署时返回 null，分享降级为纯文字
    */
   async function uploadCardSilent() {
-    if (!CLOUD_API || !_shareData) return null;
+    if (!CLOUD_API || !shareData) return null;
     try {
       const canvas = document.querySelector('#sharePreview canvas');
       if (!canvas) return null;
@@ -688,7 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(CLOUD_API + '/api/cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ..._shareData, image_data: imageData }),
+        body: JSON.stringify({ ...shareData, image_data: imageData }),
       });
       if (!res.ok) return null;
       const data = await res.json();
@@ -698,16 +755,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 多平台分享（自动上传 → 带链接分享 → OG 图片自动展示）
 
-  // 保存 share data
-  document.getElementById('shareBtn').addEventListener('click', async () => {
-    try {
-      const res = await fetch('/api/share-data');
-      if (res.ok) _shareData = await res.json();
-    } catch {}
-  }, true);
-
   function getShareText(cardUrl) {
-    const saved = _shareData ? '$' + _shareData.saved.toFixed(0) : 'money';
+    const saved = shareData ? '$' + shareData.saved.toFixed(0) : 'money';
     const url = cardUrl || 'https://PinToken.ai';
     return `I saved ${saved} on AI APIs this month with PinToken!\nTrack your LLM spending → ${url}\n#PinToken #AIcosts`;
   }

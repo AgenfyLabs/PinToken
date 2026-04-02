@@ -398,6 +398,18 @@ export function createStore(dbPath) {
   }
 
   /**
+   * 获取追踪天数（从最早记录到今天的天数）
+   * @returns {number} 追踪天数，无记录时返回 0
+   */
+  function getTrackingDays() {
+    const row = db.prepare('SELECT MIN(timestamp) AS first_date FROM requests').get();
+    if (!row?.first_date) return 0;
+    const first = new Date(row.first_date);
+    const now = new Date();
+    return Math.max(1, Math.ceil((now - first) / (1000 * 60 * 60 * 24)));
+  }
+
+  /**
    * 关闭数据库连接
    */
   function close() {
@@ -418,6 +430,7 @@ export function createStore(dbPath) {
     setOffset,
     hasRequest,
     findByDedupeHash,
+    getTrackingDays,
     getScanMeta,
     setScanMeta,
     close,

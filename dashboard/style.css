@@ -1050,3 +1050,50 @@ body {
   cursor: pointer;
 }
 .share-link-copy:hover { opacity: 0.85; }
+
+/* ===== 皮肤选择器 ===== */
+.skin-selector {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.skin-btn {
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.skin-btn:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.skin-btn.active {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+  font-weight: bold;
+}
+
+/* 复制图片按钮 */
+.share-action-copy {
+  background: none;
+  border: 1px solid var(--orange);
+  color: var(--orange);
+}
+
+/* 底部小字 */
+.share-footer-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 12px;
+}

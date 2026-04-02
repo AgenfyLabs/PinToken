@@ -30,23 +30,6 @@ export async function handleAPI(req, res, store, startedAt) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathname = url.pathname;
 
-    // GET /api/mode — 返回当前数据采集模式
-    if (pathname === '/api/mode' && req.method === 'GET') {
-      // 检查代理路由是否在运行（proxy 模式的标志）
-      const hasProxy = true; // 服务器同时提供 proxy + scanner
-      const hasScanner = true; // scanner 总是开启的
-
-      const mode = {
-        current: hasProxy ? 'hybrid' : 'log_observer',
-        log_observer: { active: true, label: 'Log Observer' },
-        proxy: { active: hasProxy, label: 'Proxy 模式' },
-      };
-
-      res.writeHead(200);
-      res.end(JSON.stringify(mode));
-      return;
-    }
-
     // GET /api/summary — 返回汇总统计，附加会话秒数和高峰状态
     if (pathname === '/api/summary' && req.method === 'GET') {
       const summary = await store.getSummary();
@@ -150,22 +133,50 @@ export async function handleAPI(req, res, store, startedAt) {
       return;
     }
 
-    // GET /api/share-data — 返回生成分享卡片所需的全部数据
+    // GET /api/share-data — 返回生成分享卡片 V2 所需的全部数据
     if (pathname === '/api/share-data' && req.method === 'GET') {
       const month = await store.getMonthSummary();
       const models = await store.getModelDistribution();
-      const topModel = models.length > 0 ? models[0].model : 'unknown';
+      const providers = await store.getProviderStats();
+
+      // 订阅月费基准（Claude Code Max）
+      const subscriptionCost = 100;
+
+      // 节省金额和百分比：相对于订阅费计算
+      const saved = Math.max(month.month_cost - subscriptionCost, 0);
+      const savedPct = saved > 0 ? Math.round(saved / subscriptionCost * 100) : 0;
+
+      // Provider 数量：排除 unknown
+      const providerCount = providers.filter(p => p.provider !== 'unknown').length;
+
+      // 追踪天数
+      const trackingDays = store.getTrackingDays();
+
+      // 月份标签：中文格式 "2026 年 4 月"
+      const monthLabel = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' });
+
+      // Top 模型：按 cost DESC 排序，取前 4，计算各自占比
+      const filtered = models.filter(m => m.provider !== 'unknown' && m.total_cost > 0);
+      const totalCost = filtered.reduce((sum, m) => sum + m.total_cost, 0);
+      const topModels = filtered
+        .sort((a, b) => b.total_cost - a.total_cost)
+        .slice(0, 4)
+        .map(m => ({
+          name: m.model,
+          pct: totalCost > 0 ? Math.round(m.total_cost / totalCost * 100) : 0,
+        }));
 
       res.writeHead(200);
       res.end(JSON.stringify({
+        month_label: monthLabel,
         month_cost: month.month_cost,
-        subscription_cost: 100,  // Max 月费
-        saved: Math.max(month.month_cost - 100, 0),
-        saved_pct: month.month_cost > 0 ? ((month.month_cost - 100) / month.month_cost * 100) : 0,
+        saved,
+        saved_pct: savedPct,
         month_requests: month.month_requests,
         month_tokens: month.month_tokens,
-        top_model: topModel,
-        month_label: month.month_label,
+        provider_count: providerCount,
+        tracking_days: trackingDays,
+        top_models: topModels,
       }));
       return;
     }
