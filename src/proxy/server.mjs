@@ -144,8 +144,12 @@ export function startServer({ port = 7777, dbPath, onLog } = {}) {
       });
     } else if (url.startsWith('/api/')) {
       handleAPI(req, res, store, startedAt);
+    } else if (url.startsWith('/dashboard')) {
+      // 去掉 /dashboard 前缀，让 serveStatic 在 DASHBOARD_DIR 中正确定位文件
+      const dashPath = url.slice('/dashboard'.length) || '/';
+      serveStatic(dashPath, res);
     } else {
-      // 静态文件：Dashboard 前端资源
+      // 根路径或其他路径也尝试 Dashboard 静态文件
       serveStatic(url, res);
     }
   });
