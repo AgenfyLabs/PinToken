@@ -115,7 +115,7 @@ export function createStore(dbPath) {
       saved_usd: record.saved_usd ?? 0,
       latency_ms: record.latency_ms ?? 0,
       status_code: record.status_code ?? 200,
-      is_estimated: record.is_estimated ?? false,
+      is_estimated: record.is_estimated ? 1 : 0,
       dedupe_hash: record.dedupe_hash ?? computeDedupeHash(record),
     };
     stmtInsert.run(finalRecord);
