@@ -103,16 +103,20 @@ export async function handleAPI(req, res, store, startedAt) {
     // GET /api/analytics/models — 模型使用分布
     if (pathname === '/api/analytics/models' && req.method === 'GET') {
       const models = await store.getModelDistribution();
+      // 过滤掉无效数据：unknown provider、0 tokens、合成模型
+      const filtered = models.filter(m => m.provider !== 'unknown' && m.total_tokens > 0);
       res.writeHead(200);
-      res.end(JSON.stringify(models));
+      res.end(JSON.stringify(filtered));
       return;
     }
 
     // GET /api/analytics/providers — 各 Provider 详情
     if (pathname === '/api/analytics/providers' && req.method === 'GET') {
       const providers = await store.getProviderDetails();
+      // 过滤掉 unknown provider（来自扫描器无法识别的日志条目）
+      const filtered = providers.filter(p => p.provider !== 'unknown');
       res.writeHead(200);
-      res.end(JSON.stringify(providers));
+      res.end(JSON.stringify(filtered));
       return;
     }
 
