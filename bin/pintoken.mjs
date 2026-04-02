@@ -48,6 +48,10 @@ PinToken v${VERSION} — 本地 LLM API 用量追踪代理
   start     直接启动代理服务器（跳过配置写入）
   stop      停止代理服务器
   status    显示终端用量状态面板
+  proxy     管理 Proxy 模式配置
+              --enable   启用 Proxy 模式（写入环境变量和 Claude Code 配置）
+              --disable  禁用 Proxy 模式（恢复原始配置）
+              --status   查看当前 Proxy 模式状态
   uninstall 停止代理并清理所有注入配置
   --version 显示版本号
   --help    显示此帮助信息
@@ -160,6 +164,42 @@ async function main() {
         renderStatusPanel(data);
       } finally {
         store.close();
+      }
+      break;
+    }
+
+    case 'proxy': {
+      const flag = process.argv[3];
+
+      if (flag === '--enable') {
+        const { enableProxy } = await import('../src/proxy/config-manager.mjs');
+        const result = enableProxy();
+        console.log(`${ORANGE}✓ Proxy 模式已启用${RESET}`);
+        console.log(`  Shell profile: ${result.profilePath}`);
+        console.log(`  ANTHROPIC_BASE_URL → http://localhost:7777/anthropic`);
+        console.log(`  OPENAI_BASE_URL   → http://localhost:7777/openai`);
+        console.log('');
+        console.log(`  请重启终端或执行: source ${result.profilePath}`);
+      } else if (flag === '--disable') {
+        const { disableProxy } = await import('../src/proxy/config-manager.mjs');
+        const result = disableProxy();
+        console.log(`${ORANGE}✓ Proxy 模式已禁用，配置已恢复${RESET}`);
+        console.log(`  已清理 ${result.profilePath} 中的环境变量`);
+        console.log(`  已移除 Claude Code 中的 ANTHROPIC_BASE_URL`);
+      } else if (flag === '--status') {
+        const { getProxyStatus } = await import('../src/proxy/config-manager.mjs');
+        const status = getProxyStatus();
+        console.log('');
+        console.log(`${BOLD}Proxy 模式状态${RESET}`);
+        console.log(`  状态:    ${status.enabled ? `${ORANGE}已启用${RESET}` : '未启用'}`);
+        if (status.enabledAt) {
+          console.log(`  启用时间: ${status.enabledAt}`);
+        }
+        console.log(`  Shell:   ${status.shell}`);
+        console.log(`  Profile: ${status.shellProfile}`);
+        console.log('');
+      } else {
+        console.log('用法: pintoken proxy [--enable | --disable | --status]');
       }
       break;
     }

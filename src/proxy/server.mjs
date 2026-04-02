@@ -15,6 +15,7 @@ import { handleAPI } from '../api/routes.mjs';
 import { createStore, getDefaultDbPath } from '../db/store.mjs';
 import { startScanner } from '../scanner/index.mjs';
 import { startPeakNotifier } from '../notify/peak.mjs';
+import { getProxyState } from './config-manager.mjs';
 
 // 当前文件所在目录（ESM 环境无 __dirname）
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -130,12 +131,30 @@ export function startServer({ port = 7777, dbPath, onLog } = {}) {
     // 匹配 OpenAI 兼容 Provider
     const matchedProvider = OPENAI_COMPAT_PROVIDERS.find((p) => url.startsWith(p.prefix));
 
+    // 检查 Proxy 模式是否启用（仅代理路由需要检查）
+    const isProxyRoute = url.startsWith('/anthropic/') || matchedProvider;
+    const proxyEnabled = getProxyState().enabled;
+
     // 路由分发（按优先级顺序匹配）
     if (url === '/health') {
       handleHealth(req, res, startedAt);
     } else if (url.startsWith('/anthropic/')) {
+      if (!proxyEnabled) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: 'Proxy 模式未启用。运行 pintoken proxy --enable 启用',
+        }));
+        return;
+      }
       handleAnthropic(req, res, store, log);
     } else if (matchedProvider) {
+      if (!proxyEnabled) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: 'Proxy 模式未启用。运行 pintoken proxy --enable 启用',
+        }));
+        return;
+      }
       // 转发到匹配的 OpenAI 兼容 Provider
       handleOpenAI(req, res, store, log, {
         baseUrl: matchedProvider.baseUrl,

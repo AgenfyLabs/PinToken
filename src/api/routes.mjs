@@ -5,6 +5,7 @@
 
 import { getPeakStatus } from '../utils/peak.mjs';
 import { getScanStatus } from '../scanner/status.mjs';
+import { getProxyState } from '../proxy/config-manager.mjs';
 
 /**
  * 统一设置响应头
@@ -53,6 +54,18 @@ export async function handleAPI(req, res, store, startedAt) {
       const peak = getPeakStatus();
       res.writeHead(200);
       res.end(JSON.stringify({ ...summary, session_seconds, peak }));
+      return;
+    }
+
+    // GET /api/mode — 返回当前运行模式（scanner 始终运行，proxy 可选启用）
+    if (pathname === '/api/mode' && req.method === 'GET') {
+      const proxyState = getProxyState();
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        scanner: true,                          // Scanner 模式始终启用
+        proxy: proxyState.enabled,              // Proxy 模式由用户手动开关
+        proxyEnabledAt: proxyState.enabledAt,
+      }));
       return;
     }
 
