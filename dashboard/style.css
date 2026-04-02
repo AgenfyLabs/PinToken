@@ -554,13 +554,193 @@ body {
   color: var(--green);
 }
 
-/* 空状态提示 */
+/* 空状态提示（旧版简单样式，保留兼容） */
 .empty-state {
   text-align: center;
   color: var(--text-secondary);
   padding: 40px 0;
   font-size: 12px;
   letter-spacing: 0.04em;
+}
+
+/* ===== 扫描进度条 ===== */
+.scan-progress {
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: height 0.5s ease, opacity 0.5s ease, margin 0.5s ease;
+}
+
+.scan-progress.hidden {
+  height: 0;
+  opacity: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.scan-progress-bar {
+  height: 2px;
+  background: var(--orange);
+  border-radius: 1px;
+  width: 0%;
+  transition: width 0.4s ease;
+}
+
+.scan-progress-bar.pulse {
+  animation: scanPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes scanPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.scan-progress-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* ===== 代理引导卡 ===== */
+.proxy-guide {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px dashed #3a3d45;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.proxy-guide-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+  font-family: var(--font);
+}
+.proxy-guide-close:hover {
+  color: var(--text-primary);
+}
+
+.proxy-guide-title {
+  color: #c9ccd5;
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.proxy-guide-desc {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.proxy-guide-cmd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border: 1px solid #3a3d45;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+.proxy-guide-code {
+  flex: 1;
+  color: var(--orange);
+  font-family: var(--font);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.proxy-guide-copy {
+  background: none;
+  border: 1px solid #3a3d45;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.proxy-guide-copy:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+/* 代理激活状态 */
+.proxy-active {
+  color: var(--green);
+  font-size: 13px;
+  font-family: var(--font);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: var(--bg-card);
+  border-left: 3px solid var(--green);
+  border-radius: 4px;
+}
+
+/* ===== Empty State（增强版） ===== */
+.empty-state-enhanced {
+  text-align: center;
+  padding: 48px 20px;
+  transition: opacity 0.3s ease;
+}
+
+.empty-state-enhanced[role="status"] {
+  /* 屏幕阅读器友好 */
+}
+
+.empty-state-title {
+  color: #c9ccd5;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.empty-state-desc {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.empty-state-btn {
+  background: none;
+  border: 1px solid #3a3d45;
+  border-radius: 4px;
+  color: var(--orange);
+  font-family: var(--font);
+  font-size: 12px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.empty-state-btn:hover {
+  border-color: var(--orange);
+  background: rgba(255, 107, 53, 0.08);
+}
+
+/* 表格淡入动画 */
+.table-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ===== 响应式 ===== */

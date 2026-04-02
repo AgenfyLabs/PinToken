@@ -4,6 +4,7 @@
  */
 
 import { getPeakStatus } from '../utils/peak.mjs';
+import { getScanStatus } from '../scanner/status.mjs';
 
 /**
  * 统一设置响应头
@@ -35,6 +36,14 @@ export async function handleAPI(req, res, store, startedAt) {
       const peak = getPeakStatus();
       res.writeHead(200);
       res.end(JSON.stringify({ ...summary, session_seconds, peak }));
+      return;
+    }
+
+    // GET /api/scan-status — 返回扫描器状态
+    if (pathname === '/api/scan-status' && req.method === 'GET') {
+      const status = getScanStatus();
+      res.writeHead(200);
+      res.end(JSON.stringify(status));
       return;
     }
 

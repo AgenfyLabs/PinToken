@@ -8,6 +8,8 @@
 let currentProvider = '';       // 当前选中的 Provider 过滤器
 let pollTimer = null;           // 轮询定时器句柄
 let sessionStartTime = Date.now(); // 会话开始时间（页面加载时）
+let lastRecordsFound = 0;       // 上次扫描发现的记录数（用于检测首条数据）
+let scanCompleteShown = false;   // 扫描完成提示是否已显示过
 
 // ===== 格式化工具函数 =====
 
@@ -143,12 +145,21 @@ function renderTable(rows) {
   tbody.innerHTML = '';
 
   if (!rows || rows.length === 0) {
-    // 空状态
+    // 增强版空状态
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="6" class="empty-state">等待请求数据...</td>`;
+    tr.innerHTML = `<td colspan="6">
+      <div class="empty-state-enhanced" role="status">
+        <div class="empty-state-title">未检测到 Claude Code 日志</div>
+        <div class="empty-state-desc">启动 Claude Code 后数据将自动出现。如需追踪其他工具，请启用代理模式。</div>
+        <button class="empty-state-btn" onclick="document.getElementById('proxyGuide').scrollIntoView({behavior:'smooth'})">了解代理模式</button>
+      </div>
+    </td>`;
     tbody.appendChild(tr);
     return;
   }
+
+  // 表格出现时添加淡入动画
+  tbody.classList.add('table-fade-in');
 
   const totalTokens = calcTotalTokens(rows);
 
@@ -284,15 +295,99 @@ function initFilterButtons() {
   });
 }
 
+// ===== 扫描进度条更新 =====
+
+/**
+ * 轮询 /api/scan-status 并更新进度条 UI
+ */
+async function fetchScanStatus() {
+  try {
+    const res = await fetch('/api/scan-status');
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const progressEl = document.getElementById('scanProgress');
+    const barEl = document.getElementById('scanProgressBar');
+    const textEl = document.getElementById('scanProgressText');
+
+    if (data.phase === 'recent' && data.scanning) {
+      // 正在扫描近期日志
+      progressEl.classList.remove('hidden');
+      const pct = data.totalFiles > 0
+        ? Math.round((data.filesScanned / data.totalFiles) * 100)
+        : 0;
+      barEl.style.width = pct + '%';
+      barEl.classList.add('pulse');
+      textEl.textContent = `正在扫描近期日志... ${data.recordsFound} 条记录已找到`;
+      progressEl.setAttribute('aria-valuenow', pct);
+    } else if (data.phase === 'recent' && !data.scanning && !scanCompleteShown) {
+      // recent 阶段刚完成
+      scanCompleteShown = true;
+      barEl.style.width = '100%';
+      barEl.classList.remove('pulse');
+      textEl.textContent = `扫描完成！共 ${data.recordsFound} 条记录`;
+      progressEl.setAttribute('aria-valuenow', 100);
+      // 2s 后缩小为小字
+      setTimeout(() => {
+        textEl.textContent = '后台补扫历史数据中...';
+        barEl.style.width = '0%';
+      }, 2000);
+    } else if (data.phase === 'backfill') {
+      // 后台补扫
+      progressEl.classList.remove('hidden');
+      barEl.style.width = '0%';
+      barEl.classList.remove('pulse');
+      textEl.textContent = '后台补扫历史数据中...';
+    } else if (data.phase === 'idle') {
+      // 空闲：隐藏进度条
+      progressEl.classList.add('hidden');
+    }
+
+    // 更新代理引导卡状态
+    updateProxyGuide(data.proxyActive);
+
+    // 检测首条数据到达：触发 empty state → table 过渡
+    if (data.recordsFound > 0 && lastRecordsFound === 0) {
+      fetchRequests(currentProvider);
+    }
+    lastRecordsFound = data.recordsFound;
+
+  } catch {
+    // 静默失败
+  }
+}
+
+/**
+ * 更新代理引导卡状态
+ * @param {boolean} proxyActive
+ */
+function updateProxyGuide(proxyActive) {
+  const guideEl = document.getElementById('proxyGuide');
+  const activeEl = document.getElementById('proxyActive');
+
+  if (proxyActive) {
+    guideEl.style.display = 'none';
+    activeEl.style.display = '';
+  } else {
+    // 检查用户是否已关闭引导卡
+    const dismissed = localStorage.getItem('pintoken-guide-dismissed');
+    if (dismissed === '1') {
+      guideEl.style.display = 'none';
+    }
+    activeEl.style.display = 'none';
+  }
+}
+
 // ===== 轮询刷新 =====
 
 /**
- * 执行一次完整刷新（汇总 + 请求列表）
+ * 执行一次完整刷新（汇总 + 请求列表 + 扫描状态）
  */
 function refresh() {
   fetchSummary();
   fetchSubscription();
   fetchRequests(currentProvider);
+  fetchScanStatus();
 }
 
 /**
@@ -449,6 +544,29 @@ document.addEventListener('DOMContentLoaded', () => {
   initFilterButtons();  // 绑定过滤器按钮
   refresh();            // 立即首次加载
   startPolling();       // 开始轮询
+
+  // 代理引导卡：关闭按钮
+  document.getElementById('proxyGuideClose').addEventListener('click', () => {
+    document.getElementById('proxyGuide').style.display = 'none';
+    localStorage.setItem('pintoken-guide-dismissed', '1');
+  });
+
+  // 代理引导卡：复制命令按钮
+  document.getElementById('proxyGuideCopy').addEventListener('click', () => {
+    const btn = document.getElementById('proxyGuideCopy');
+    navigator.clipboard.writeText('pintoken setup --proxy').then(() => {
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = '复制'; }, 1500);
+    });
+  });
+
+  // 首次加载时检查引导卡是否已关闭
+  if (localStorage.getItem('pintoken-guide-dismissed') === '1') {
+    document.getElementById('proxyGuide').style.display = 'none';
+  }
+
+  // 立即获取一次扫描状态
+  fetchScanStatus();
 
   // 关闭按钮：Electron 环境关窗口，浏览器关标签页
   document.getElementById('closeBtn').addEventListener('click', () => {
