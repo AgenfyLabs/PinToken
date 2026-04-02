@@ -10,6 +10,7 @@ let pollTimer = null;           // 轮询定时器句柄
 let sessionStartTime = Date.now(); // 会话开始时间（页面加载时）
 let lastRecordsFound = 0;       // 上次扫描发现的记录数（用于检测首条数据）
 let scanCompleteShown = false;   // 扫描完成提示是否已显示过
+let currentMode = 'log_observer'; // 当前数据采集模式
 
 // ===== 格式化工具函数 =====
 
@@ -49,6 +50,51 @@ function formatTime(ms) {
   return `${minutes}m`;
 }
 
+// ===== 模式指示器 =====
+
+/**
+ * 获取当前模式并更新顶栏指示器 + 底部模式信息面板
+ */
+async function updateModeIndicator() {
+  try {
+    const res = await fetch('/api/mode');
+    const mode = await res.json();
+    const indicator = document.getElementById('modeIndicator');
+    const label = document.getElementById('modeLabel');
+
+    if (mode.proxy?.active) {
+      indicator.className = 'mode-indicator proxy';
+      label.textContent = 'Proxy 模式';
+      currentMode = 'proxy';
+
+      // 更新底部模式信息面板
+      const cardProxy = document.getElementById('modeCardProxy');
+      const cardObserver = document.getElementById('modeCardObserver');
+      if (cardProxy) {
+        cardProxy.classList.add('active');
+        document.getElementById('proxyModeStatus').textContent = '运行中';
+      }
+    } else {
+      indicator.className = 'mode-indicator log-observer';
+      label.textContent = 'Log Observer';
+      currentMode = 'log_observer';
+    }
+  } catch {
+    // 静默失败
+  }
+}
+
+/**
+ * 辅助函数：为估算值添加精度标记
+ * @param {string} value - 格式化后的数值字符串
+ * @param {boolean} isEstimated - 是否为估算值
+ * @returns {string}
+ */
+function addEstimatedMark(value, isEstimated) {
+  if (!isEstimated) return value;
+  return `${value} <span class="estimated-mark" title="估算值（来自日志解析）">~</span>`;
+}
+
 // ===== 汇总卡片更新 =====
 
 /**
@@ -60,15 +106,18 @@ async function fetchSummary() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
+    // 是否为估算值（log_observer 模式下数据为估算）
+    const isEstimated = currentMode === 'log_observer';
+
     // 今日 Token 用量
-    document.getElementById('todayTokens').textContent =
-      formatNumber(data.today_tokens);
+    document.getElementById('todayTokens').innerHTML =
+      addEstimatedMark(formatNumber(data.today_tokens), isEstimated);
     document.getElementById('yesterdayTokens').textContent =
       formatNumber(data.yesterday_tokens);
 
     // 今日花费
-    document.getElementById('todayCost').textContent =
-      formatCost(data.today_cost);
+    document.getElementById('todayCost').innerHTML =
+      addEstimatedMark(formatCost(data.today_cost), isEstimated);
     document.getElementById('yesterdayCost').textContent =
       formatCost(data.yesterday_cost);
 
@@ -543,6 +592,7 @@ function renderModelChart(data) {
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();           // 绑定 Tab 切换
   initFilterButtons();  // 绑定过滤器按钮
+  updateModeIndicator(); // 获取并显示当前模式
   refresh();            // 立即首次加载
   startPolling();       // 开始轮询
 

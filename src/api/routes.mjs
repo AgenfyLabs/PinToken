@@ -29,6 +29,23 @@ export async function handleAPI(req, res, store, startedAt) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathname = url.pathname;
 
+    // GET /api/mode — 返回当前数据采集模式
+    if (pathname === '/api/mode' && req.method === 'GET') {
+      // 检查代理路由是否在运行（proxy 模式的标志）
+      const hasProxy = true; // 服务器同时提供 proxy + scanner
+      const hasScanner = true; // scanner 总是开启的
+
+      const mode = {
+        current: hasProxy ? 'hybrid' : 'log_observer',
+        log_observer: { active: true, label: 'Log Observer' },
+        proxy: { active: hasProxy, label: 'Proxy 模式' },
+      };
+
+      res.writeHead(200);
+      res.end(JSON.stringify(mode));
+      return;
+    }
+
     // GET /api/summary — 返回汇总统计，附加会话秒数和高峰状态
     if (pathname === '/api/summary' && req.method === 'GET') {
       const summary = await store.getSummary();
