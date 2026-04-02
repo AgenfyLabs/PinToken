@@ -142,9 +142,9 @@ export async function handleAPI(req, res, store, startedAt) {
       // 订阅月费基准（Claude Code Max）
       const subscriptionCost = 100;
 
-      // 节省金额和百分比：相对于订阅费计算
+      // 节省金额和百分比：省了多少占总花费的比例
       const saved = Math.max(month.month_cost - subscriptionCost, 0);
-      const savedPct = saved > 0 ? Math.round(saved / subscriptionCost * 100) : 0;
+      const savedPct = month.month_cost > 0 ? Math.round(saved / month.month_cost * 100) : 0;
 
       // Provider 数量：排除 unknown
       const providerCount = providers.filter(p => p.provider !== 'unknown').length;
@@ -155,7 +155,7 @@ export async function handleAPI(req, res, store, startedAt) {
       // 月份标签：中文格式 "2026 年 4 月"
       const monthLabel = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' });
 
-      // Top 模型：按 cost DESC 排序，取前 4，计算各自占比
+      // Top 模型：按 cost DESC 排序，取前 4，过滤 0% 模型
       const filtered = models.filter(m => m.provider !== 'unknown' && m.total_cost > 0);
       const totalCost = filtered.reduce((sum, m) => sum + m.total_cost, 0);
       const topModels = filtered
@@ -164,7 +164,8 @@ export async function handleAPI(req, res, store, startedAt) {
         .map(m => ({
           name: m.model,
           pct: totalCost > 0 ? Math.round(m.total_cost / totalCost * 100) : 0,
-        }));
+        }))
+        .filter(m => m.pct > 0);
 
       res.writeHead(200);
       res.end(JSON.stringify({
