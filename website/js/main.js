@@ -98,35 +98,64 @@
   // ========== 导航 CTA 按钮 ==========
 
   /**
-   * "开始使用" / "Get Started" 按钮点击后
-   * 平滑滚动到终端代码块位置
+   * Hero "Get Started" 按钮：复制命令 + 高亮终端
+   * Nav "Get Started" 按钮：滚动到终端
    */
-  function initNavCTA() {
-    var ctaButtons = document.querySelectorAll('.nav-cta, .cta-get-started');
-
-    ctaButtons.forEach(function (btn) {
-      // 跳过已有有效锚点的按钮（由 initSmoothScroll 处理）
-      var href = btn.getAttribute('href');
-      if (href && href.startsWith('#') && href !== '#') return;
-
-      btn.addEventListener('click', function (e) {
+  function initGetStarted() {
+    // Hero 内的 Get Started：点击复制命令并闪烁终端
+    var heroCta = document.getElementById('hero-cta');
+    if (heroCta) {
+      heroCta.addEventListener('click', function (e) {
         e.preventDefault();
-
-        // 滚动到终端代码块
         var terminal = document.querySelector('.terminal');
         if (!terminal) return;
 
-        var nav = document.querySelector('nav') || document.querySelector('.nav');
-        var offset = nav ? nav.offsetHeight + 20 : 20;
+        // 复制命令
+        var command = 'npx pintoken setup';
+        navigator.clipboard.writeText(command).catch(function () {
+          fallbackCopy(command);
+        });
 
+        // 终端闪烁高亮
+        terminal.style.transition = 'box-shadow 0.3s';
+        terminal.style.boxShadow = '0 0 0 3px rgba(255, 107, 53, 0.5), 0 4px 20px rgba(0,0,0,0.08)';
+
+        // 复制图标变 ✓
+        var copyIcon = terminal.querySelector('.copy-icon');
+        if (copyIcon) {
+          var originalHTML = copyIcon.innerHTML;
+          copyIcon.innerHTML = '<span style="color:#27c93f;font-size:16px;">✓</span>';
+          setTimeout(function () {
+            copyIcon.innerHTML = originalHTML;
+          }, 1500);
+        }
+
+        // 按钮文字短暂变为 Copied / 已复制
+        var originalText = heroCta.textContent;
+        var isZh = document.documentElement.lang === 'zh';
+        heroCta.textContent = isZh ? '已复制!' : 'Copied!';
+        setTimeout(function () {
+          heroCta.textContent = originalText;
+          terminal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+        }, 1500);
+      });
+    }
+
+    // 导航栏 Get Started：滚动到终端
+    var navCta = document.querySelector('.nav-cta');
+    if (navCta) {
+      navCta.addEventListener('click', function (e) {
+        e.preventDefault();
+        var terminal = document.querySelector('.terminal');
+        if (!terminal) return;
+
+        var nav = document.querySelector('.nav');
+        var offset = nav ? nav.offsetHeight + 20 : 20;
         var targetPosition = terminal.getBoundingClientRect().top + window.pageYOffset - offset;
 
-        window.scrollTo({
-          top: targetPosition,
-          behavior: 'smooth'
-        });
+        window.scrollTo({ top: targetPosition, behavior: 'smooth' });
       });
-    });
+    }
   }
 
   // ========== 移动端汉堡菜单 ==========
@@ -192,7 +221,7 @@
   function init() {
     initCopyButton();
     initSmoothScroll();
-    initNavCTA();
+    initGetStarted();
     initMobileMenu();
     initLangOverride();
   }
