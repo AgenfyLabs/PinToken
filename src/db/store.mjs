@@ -7,6 +7,7 @@ import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
+import { computeDedupeHash } from '../data/merger.mjs';
 
 /**
  * 返回默认数据库路径 ~/.pintoken/data.db
@@ -67,18 +68,33 @@ export function createStore(dbPath) {
     // 列已存在，忽略
   }
 
+  // 兼容已有数据库：追加 is_estimated 列（标记数据是否为估算值）
+  try {
+    db.exec("ALTER TABLE requests ADD COLUMN is_estimated BOOLEAN DEFAULT FALSE");
+  } catch {
+    // 列已存在，忽略
+  }
+
+  // 兼容已有数据库：追加 dedupe_hash 列（用于去重）
+  try {
+    db.exec("ALTER TABLE requests ADD COLUMN dedupe_hash TEXT");
+  } catch {
+    // 列已存在，忽略
+  }
+  db.exec("CREATE INDEX IF NOT EXISTS idx_dedupe_hash ON requests(dedupe_hash)");
+
   // 预编译插入语句，提升批量写入性能
   const stmtInsert = db.prepare(`
     INSERT INTO requests (
       id, timestamp, provider, model,
       input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
       cost_usd, baseline_cost_usd, saved_usd,
-      latency_ms, status_code, source
+      latency_ms, status_code, source, is_estimated, dedupe_hash
     ) VALUES (
       @id, @timestamp, @provider, @model,
       @input_tokens, @output_tokens, @cache_read_tokens, @cache_write_tokens,
       @cost_usd, @baseline_cost_usd, @saved_usd,
-      @latency_ms, @status_code, @source
+      @latency_ms, @status_code, @source, @is_estimated, @dedupe_hash
     )
   `);
 
@@ -87,7 +103,7 @@ export function createStore(dbPath) {
    * @param {object} record - 请求记录对象
    */
   function insertRequest(record) {
-    stmtInsert.run({
+    const finalRecord = {
       source: 'proxy',
       ...record,
       input_tokens: record.input_tokens ?? 0,
@@ -99,7 +115,10 @@ export function createStore(dbPath) {
       saved_usd: record.saved_usd ?? 0,
       latency_ms: record.latency_ms ?? 0,
       status_code: record.status_code ?? 200,
-    });
+      is_estimated: record.is_estimated ?? false,
+      dedupe_hash: record.dedupe_hash ?? computeDedupeHash(record),
+    };
+    stmtInsert.run(finalRecord);
   }
 
   /**
@@ -219,6 +238,15 @@ export function createStore(dbPath) {
   function hasRequest(id) {
     const row = db.prepare('SELECT 1 FROM requests WHERE id = ?').get(id);
     return !!row;
+  }
+
+  /**
+   * 根据 dedupe_hash 查找已有记录（用于双模式去重）
+   * @param {string} hash - 去重哈希值
+   * @returns {{ id: string, source: string } | undefined}
+   */
+  function findByDedupeHash(hash) {
+    return db.prepare('SELECT id, source FROM requests WHERE dedupe_hash = ?').get(hash);
   }
 
   /**
@@ -389,6 +417,7 @@ export function createStore(dbPath) {
     getOffset,
     setOffset,
     hasRequest,
+    findByDedupeHash,
     getScanMeta,
     setScanMeta,
     close,

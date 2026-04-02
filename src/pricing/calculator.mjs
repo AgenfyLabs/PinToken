@@ -51,13 +51,22 @@ export function calculateCost({
   // 构造完整的定价 key（若已含 / 则直接用，否则拼接 provider 前缀）
   const modelKey = model.includes('/') ? model : `${provider}/${model}`;
 
-  // 模型不存在时返回 unknown
-  if (!pricing[modelKey]) {
+  // 精确匹配定价条目
+  let priceEntry = pricing[modelKey];
+
+  // 若无精确匹配，尝试去除日期后缀（如 claude-sonnet-4-20250514 → claude-sonnet-4）
+  if (!priceEntry) {
+    const stripped = modelKey.replace(/-\d{8}$/, '');
+    priceEntry = pricing[stripped];
+  }
+
+  // 仍无匹配，返回 unknown
+  if (!priceEntry) {
     return { cost_usd: 0, baseline_cost_usd: 0, saved_usd: 0, unknown: true };
   }
 
   // 计算指定模型的费用
-  const cost_usd = computeCost(pricing[modelKey], {
+  const cost_usd = computeCost(priceEntry, {
     input_tokens,
     output_tokens,
     cache_read_tokens,

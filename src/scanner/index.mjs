@@ -209,6 +209,7 @@ export function scanFile(filePath, store, onLog) {
       baseline_cost_usd: costData.baseline_cost_usd,
       saved_usd: costData.saved_usd,
       source: 'log',
+      is_estimated: true,  // Log Observer 数据为估算值
       latency_ms: 0,
       status_code: 200,
     };
