@@ -5,6 +5,7 @@
 
 import http from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
+import path from 'node:path';
 import { join, extname, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleAnthropic } from './anthropic.mjs';
@@ -12,7 +13,7 @@ import { handleOpenAI } from './openai.mjs';
 import { handleHealth } from './health.mjs';
 import { handleAPI } from '../api/routes.mjs';
 import { createStore, getDefaultDbPath } from '../db/store.mjs';
-import { startScanner, hasClaudeLogs } from '../scanner/index.mjs';
+import { startScanner } from '../scanner/index.mjs';
 import { startPeakNotifier } from '../notify/peak.mjs';
 
 // 当前文件所在目录（ESM 环境无 __dirname）
@@ -56,9 +57,13 @@ function serveStatic(urlPath, res) {
   // 将 / 映射到 /index.html
   if (urlPath === '/') urlPath = '/index.html';
 
-  // 安全处理：去除路径中的 .. 防止目录穿越
+  // 安全处理：路径穿越防护
   const safePath = urlPath.replace(/\.\./g, '');
-  const filePath = join(DASHBOARD_DIR, safePath);
+  const resolved = path.resolve(DASHBOARD_DIR, '.' + safePath);
+  if (!resolved.startsWith(DASHBOARD_DIR)) {
+    res.writeHead(403); res.end('Forbidden'); return;
+  }
+  const filePath = resolved;
 
   // 判断文件是否存在且不是目录
   const fileExists = existsSync(filePath) && !statSync(filePath).isDirectory();
@@ -102,10 +107,8 @@ export function startServer({ port = 7777, dbPath, onLog } = {}) {
   // 使用默认日志回调
   const log = onLog || defaultLog;
 
-  // 启动 JSONL 日志扫描器（如果检测到 Claude Code 日志）
-  if (hasClaudeLogs()) {
-    startScanner(store, { onLog: log });
-  }
+  // 无条件启动 JSONL 日志扫描器
+  startScanner(store, { onLog: log });
 
   // 启动高峰时段 macOS 系统通知（每 5 分钟检查，状态变化时推送）
   startPeakNotifier();

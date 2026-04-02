@@ -123,9 +123,6 @@ export function parseAnthropicResponse(body) {
   if (!body || !body.usage) return null;
 
   const { model, usage } = body;
-  if (!model || !usage.input_tokens == null || usage.output_tokens == null) {
-    // 宽松检查：只要有 usage 对象就继续
-  }
 
   return {
     model: model ?? null,

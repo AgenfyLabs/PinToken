@@ -27,6 +27,8 @@ export function createStore(dbPath) {
 
   // 启用 WAL 模式，提升写入性能
   db.pragma('journal_mode = WAL');
+  // 设置忙等待超时，避免 SQLITE_BUSY 错误
+  db.pragma('busy_timeout = 3000');
 
   // 创建表结构和索引
   db.exec(`
@@ -51,6 +53,10 @@ export function createStore(dbPath) {
       file_path      TEXT PRIMARY KEY,
       last_offset    INTEGER DEFAULT 0,
       last_modified  TEXT
+    );
+    CREATE TABLE IF NOT EXISTS scan_metadata (
+      key   TEXT PRIMARY KEY,
+      value TEXT
     );
   `);
 
@@ -342,6 +348,28 @@ export function createStore(dbPath) {
   }
 
   /**
+   * 获取扫描元数据
+   * @param {string} key
+   * @returns {string|null}
+   */
+  function getScanMeta(key) {
+    const row = db.prepare('SELECT value FROM scan_metadata WHERE key = ?').get(key);
+    return row ? row.value : null;
+  }
+
+  /**
+   * 设置扫描元数据
+   * @param {string} key
+   * @param {string} value
+   */
+  function setScanMeta(key, value) {
+    db.prepare(`
+      INSERT INTO scan_metadata (key, value) VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = ?
+    `).run(key, value, value);
+  }
+
+  /**
    * 关闭数据库连接
    */
   function close() {
@@ -361,6 +389,8 @@ export function createStore(dbPath) {
     getOffset,
     setOffset,
     hasRequest,
+    getScanMeta,
+    setScanMeta,
     close,
   };
 }
