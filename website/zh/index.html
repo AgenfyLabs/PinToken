@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 页面标题与 SEO -->
+  <title>PinToken — 追踪 LLM API 用量与费用 | Pin your token. Save your dollar.</title>
+  <meta name="description" content="PinToken 是一个开源的 LLM API 用量追踪工具。一行命令追踪所有 LLM API 用量与费用，看清每分钱花在哪、省在哪。100% 本地运行，API Key 永不上传。">
+  <!-- Open Graph 社交分享 -->
+  <meta property="og:title" content="PinToken — 追踪 LLM API 用量与费用">
+  <meta property="og:description" content="一行命令追踪所有 LLM API 用量与费用，看清每分钱花在哪、省在哪。开源、100% 本地运行。">
+  <meta property="og:image" content="/assets/og-image.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://pintoken.ai/zh/">
+  <!-- 外链样式和脚本 -->
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/main.js" defer></script>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">📌 PinToken</a>
+    <!-- 移动端汉堡菜单按钮 -->
+    <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links">
+      <a href="#features">特性</a>
+      <a href="#security">安全</a>
+      <a href="https://github.com/AgenfyLabs/PinToken" target="_blank" rel="noopener">GitHub</a>
+      <!-- 语言切换：中文高亮，EN 链接到根目录英文版 -->
+      <div class="nav-lang">
+        <a href="/">EN</a>
+        <div class="nav-lang-divider"></div>
+        <a href="/zh/" class="active">中</a>
+      </div>
+      <a href="#hero" class="nav-cta">开始使用</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero 区域 -->
+<div class="hero" id="hero">
+  <div class="hero-badge">⚡ 开源 · 100% 本地运行</div>
+  <h1 class="hero-title">Pin your token.<br><span class="accent">Save your dollar.</span></h1>
+  <p class="hero-subtitle">一行命令追踪所有 LLM API 用量与费用<br>看清每分钱花在哪、省在哪</p>
+  <!-- 终端代码块 -->
+  <div class="terminal">
+    <span class="prompt">$</span>
+    <span class="cmd">npx pintoken setup</span>
+    <span class="copy-icon" title="复制" data-copy="npx pintoken setup">
+      <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+    </span>
+  </div>
+  <!-- 双 CTA 按钮 -->
+  <div class="hero-buttons">
+    <a class="btn-secondary" href="https://github.com/AgenfyLabs/PinToken" target="_blank" rel="noopener">
+      <!-- GitHub SVG 图标 -->
+      <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      GitHub
+    </a>
+    <a class="btn-primary" href="#hero">开始使用</a>
+  </div>
+  <!-- 数据亮点条 -->
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-value orange">8</div><div class="stat-label">Provider</div></div>
+    <div class="stat"><div class="stat-value yellow">$0</div><div class="stat-label">限时免费</div></div>
+    <div class="stat"><div class="stat-value">30s</div><div class="stat-label">安装启动</div></div>
+    <div class="stat"><div class="stat-value green">100%</div><div class="stat-label">本地运行</div></div>
+  </div>
+</div>
+
+<!-- Dashboard 截图（Mock，内容保持英文） -->
+<div class="dashboard-section">
+  <div class="dashboard-frame">
+    <!-- macOS 风格标题栏 -->
+    <div class="dashboard-titlebar">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <div class="titlebar-url">localhost:7777/dashboard</div>
+    </div>
+    <div class="dashboard-body">
+      <!-- Dashboard 头部 -->
+      <div class="dash-header">
+        <div class="dash-logo">📌 PinToken</div>
+        <div class="dash-tabs">
+          <div class="dash-tab active">Overview</div>
+          <div class="dash-tab">Analytics</div>
+          <div class="dash-tab">Providers</div>
+        </div>
+      </div>
+      <!-- 4 张数据卡片 -->
+      <div class="dash-cards">
+        <div class="dash-card">
+          <div class="dash-card-label">Total Spent</div>
+          <div class="dash-card-value" style="color:#FF6B35;">$128.40</div>
+          <div class="dash-card-sub" style="color:#555;">this month</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-label">Saved</div>
+          <div class="dash-card-value" style="color:#27c93f;">$47.20</div>
+          <div class="dash-card-sub" style="color:#27c93f;">↓ vs max price</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-label">API Calls</div>
+          <div class="dash-card-value">1,847</div>
+          <div class="dash-card-sub" style="color:#555;">across 5 providers</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-label">Tokens</div>
+          <div class="dash-card-value">2.4M</div>
+          <div class="dash-card-sub" style="color:#555;">input + output</div>
+        </div>
+      </div>
+      <!-- 柱状图 -->
+      <div class="dash-chart">
+        <div class="dash-chart-title">Daily Spend — Last 14 Days</div>
+        <div class="bars">
+          <div class="bar" style="height:35%;background:#FF6B35;opacity:0.5;"></div>
+          <div class="bar" style="height:50%;background:#FF6B35;opacity:0.55;"></div>
+          <div class="bar" style="height:40%;background:#FF6B35;opacity:0.5;"></div>
+          <div class="bar" style="height:70%;background:#FF6B35;opacity:0.6;"></div>
+          <div class="bar" style="height:55%;background:#FF6B35;opacity:0.55;"></div>
+          <div class="bar" style="height:45%;background:#FF6B35;opacity:0.5;"></div>
+          <div class="bar" style="height:80%;background:#FF6B35;opacity:0.65;"></div>
+          <div class="bar" style="height:60%;background:#FF6B35;opacity:0.6;"></div>
+          <div class="bar" style="height:75%;background:#FF6B35;opacity:0.6;"></div>
+          <div class="bar" style="height:50%;background:#FF6B35;opacity:0.55;"></div>
+          <div class="bar" style="height:65%;background:#FF6B35;opacity:0.6;"></div>
+          <div class="bar" style="height:85%;background:#FF6B35;opacity:0.7;"></div>
+          <div class="bar" style="height:70%;background:#FF6B35;opacity:0.6;"></div>
+          <div class="bar" style="height:90%;background:#FF6B35;"></div>
+        </div>
+      </div>
+      <!-- Provider 标签行 -->
+      <div class="dash-providers">
+        <div class="provider-tag">Anthropic</div>
+        <div class="provider-tag">OpenAI</div>
+        <div class="provider-tag">xAI</div>
+        <div class="provider-tag">Gemini</div>
+        <div class="provider-tag">Deepseek</div>
+        <div class="provider-tag">Moonshot</div>
+        <div class="provider-tag">Qwen</div>
+        <div class="provider-tag">GLM</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 核心特性 -->
+<section class="features" id="features">
+  <div class="features-header">
+    <h2>为什么用 PinToken</h2>
+    <p>开发者每月花数百美元在 LLM 上，却不知道钱花在哪</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon orange">📊</div>
+      <h3>实时费用追踪</h3>
+      <p>每次 API 调用自动记录 token 数和费用，不再等月底账单吓一跳</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon green">💰</div>
+      <h3>省钱可视化</h3>
+      <p>自动对比各 provider 定价，算出你比最贵方案省了多少钱</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon blue">⚡</div>
+      <h3>30 秒安装</h3>
+      <p>一行 npx 命令，无需配置，自动识别 8 大 LLM provider</p>
+    </div>
+  </div>
+</section>
+
+<!-- 安全承诺 -->
+<section class="security" id="security">
+  <div class="security-box">
+    <div class="security-icon">🔒</div>
+    <div class="security-content">
+      <h2>API Key 永不离开你的电脑</h2>
+      <p>PinToken 100% 运行在本地。你的 API Key、请求内容、对话记录，全部留在你的机器上。我们不运行任何服务器，不收集任何数据。</p>
+      <div class="security-points">
+        <div class="security-point"><span class="check">✓</span> 零数据上传</div>
+        <div class="security-point"><span class="check">✓</span> 本地 SQLite 存储</div>
+        <div class="security-point"><span class="check">✓</span> 代理仅透传不修改</div>
+        <div class="security-point"><span class="check">✓</span> MIT 开源可审计</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 页脚 -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span class="logo-text">📌 PinToken</span>
+      <span>· MIT License · 用爱和 Claude Code 构建</span>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/AgenfyLabs/PinToken" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/AgenfyLabs/PinToken#readme" target="_blank" rel="noopener">文档</a>
+      <a href="https://github.com/AgenfyLabs/PinToken/issues" target="_blank" rel="noopener">反馈</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
