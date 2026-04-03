@@ -330,12 +330,15 @@ function generateShareCard(data, skinName) {
 
   var W = 1080;  // 固定宽度
   var SCALE = 2;
+  var ft = skin.features;
+  var c = skin.colors;
+  var PAD = 60;
 
-  // 预计算高度：版本栏(100) + 品牌区(90) + 两栏标题(30) + 5行数据(5*38=190) + 底栏(60) + 上下边距
+  // 预计算高度：版本栏 + 品牌区 + 两栏数据 + 底栏
   var rowCount = 5;
   var rowH = 38;
   var H = 80 + 48 + 90 + 28 + (rowCount * rowH) + 60 + 80; // ≈ 576
-  if (ft.tearEdge) H += 24; // 上下锯齿额外空间
+  if (ft.tearEdge) H += 24;
 
   var canvas = document.createElement('canvas');
   canvas.width = W * SCALE;
@@ -343,10 +346,6 @@ function generateShareCard(data, skinName) {
 
   var ctx = canvas.getContext('2d');
   ctx.scale(SCALE, SCALE);
-
-  var c = skin.colors;
-  var ft = skin.features;
-  var PAD = 60;
   var RIGHT = W - PAD;
 
   // 字体快捷方式
