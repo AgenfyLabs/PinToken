@@ -598,16 +598,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('shareModal').style.display = 'none';
   });
 
-  // 下载图片：导出 1080×1080 PNG（从 2160 缩放）
+  // 下载图片：从 2x canvas 缩放到 1x 导出 PNG
   document.getElementById('shareDownload').addEventListener('click', () => {
     const srcCanvas = document.querySelector('#sharePreview canvas');
     if (!srcCanvas) return;
-    // 创建 1080×1080 临时 canvas，从 2160×2160 缩放
+    // 导出尺寸 = 源 canvas 物理像素 / 2（Retina 2x）
+    const expW = srcCanvas.width / 2;
+    const expH = srcCanvas.height / 2;
     const exportCanvas = document.createElement('canvas');
-    exportCanvas.width = 1080;
-    exportCanvas.height = 1080;
+    exportCanvas.width = expW;
+    exportCanvas.height = expH;
     const ctx = exportCanvas.getContext('2d');
-    ctx.drawImage(srcCanvas, 0, 0, 1080, 1080);
+    ctx.drawImage(srcCanvas, 0, 0, expW, expH);
     // 生成文件名 pintoken-YYYY-MM.png
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -623,12 +625,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const srcCanvas = document.querySelector('#sharePreview canvas');
     if (!srcCanvas) return;
     const btn = document.getElementById('shareCopy');
-    // 创建 1080×1080 临时 canvas
+    // 导出尺寸 = 源 canvas / 2
+    const expW = srcCanvas.width / 2;
+    const expH = srcCanvas.height / 2;
     const exportCanvas = document.createElement('canvas');
-    exportCanvas.width = 1080;
-    exportCanvas.height = 1080;
+    exportCanvas.width = expW;
+    exportCanvas.height = expH;
     const ctx = exportCanvas.getContext('2d');
-    ctx.drawImage(srcCanvas, 0, 0, 1080, 1080);
+    ctx.drawImage(srcCanvas, 0, 0, expW, expH);
     try {
       const blob = await new Promise(resolve => exportCanvas.toBlob(resolve, 'image/png'));
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);

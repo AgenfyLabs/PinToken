@@ -51,22 +51,19 @@ function getSkinKey(skin) {
  *  背景绘制
  * ============================================================ */
 
-function drawBg(ctx, skin, SIZE) {
+function drawBg(ctx, skin, W, H) {
   var key = getSkinKey(skin);
 
   // 基础背景色
   ctx.fillStyle = skin.bg.color;
-  ctx.fillRect(0, 0, SIZE, SIZE);
+  ctx.fillRect(0, 0, W, H);
 
   // 热敏纸：微弱噪点纹理
   if (skin.features.paperNoise) {
     ctx.save();
-    for (var i = 0; i < 8000; i++) {
-      var nx = Math.random() * SIZE;
-      var ny = Math.random() * SIZE;
-      var na = Math.random() * 0.03;
-      ctx.fillStyle = 'rgba(0,0,0,' + na + ')';
-      ctx.fillRect(nx, ny, 1, 1);
+    for (var i = 0; i < 6000; i++) {
+      ctx.fillStyle = 'rgba(0,0,0,' + (Math.random() * 0.03) + ')';
+      ctx.fillRect(Math.random() * W, Math.random() * H, 1, 1);
     }
     ctx.restore();
   }
@@ -76,11 +73,8 @@ function drawBg(ctx, skin, SIZE) {
     ctx.save();
     ctx.strokeStyle = 'rgba(255,255,255,0.03)';
     ctx.lineWidth = 0.5;
-    for (var d = -SIZE; d < SIZE * 2; d += 8) {
-      ctx.beginPath();
-      ctx.moveTo(d, 0);
-      ctx.lineTo(d + SIZE, SIZE);
-      ctx.stroke();
+    for (var d = -H; d < W + H; d += 8) {
+      ctx.beginPath(); ctx.moveTo(d, 0); ctx.lineTo(d + H, H); ctx.stroke();
     }
     ctx.restore();
   }
@@ -88,9 +82,9 @@ function drawBg(ctx, skin, SIZE) {
   // 复古终端：CRT 扫描线
   if (skin.features.scanlines) {
     ctx.save();
-    for (var sy = 0; sy < SIZE; sy += 3) {
+    for (var sy = 0; sy < H; sy += 3) {
       ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.fillRect(0, sy, SIZE, 1);
+      ctx.fillRect(0, sy, W, 1);
     }
     ctx.restore();
   }
@@ -98,29 +92,27 @@ function drawBg(ctx, skin, SIZE) {
   // 霓虹：背景光斑
   if (key === 'neon') {
     ctx.save();
-    // 橙色光斑（中上）
-    var g1 = ctx.createRadialGradient(SIZE / 2, 260, 0, SIZE / 2, 260, 400);
+    var g1 = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.3, 400);
     g1.addColorStop(0, 'rgba(255,107,53,0.10)');
     g1.addColorStop(1, 'rgba(255,107,53,0)');
     ctx.fillStyle = g1;
-    ctx.fillRect(0, 0, SIZE, SIZE);
-    // 绿色光斑（右下）
-    var g2 = ctx.createRadialGradient(800, 800, 0, 800, 800, 300);
+    ctx.fillRect(0, 0, W, H);
+    var g2 = ctx.createRadialGradient(W * 0.75, H * 0.75, 0, W * 0.75, H * 0.75, 250);
     g2.addColorStop(0, 'rgba(39,201,63,0.06)');
     g2.addColorStop(1, 'rgba(39,201,63,0)');
     ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.fillRect(0, 0, W, H);
     ctx.restore();
   }
 
   // 复古终端：CRT 光晕
   if (skin.features.crtGlow) {
     ctx.save();
-    var cg = ctx.createRadialGradient(SIZE / 2, SIZE / 2, 0, SIZE / 2, SIZE / 2, SIZE * 0.7);
+    var cg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.6);
     cg.addColorStop(0, 'rgba(51,255,51,0.04)');
     cg.addColorStop(1, 'rgba(51,255,51,0)');
     ctx.fillStyle = cg;
-    ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.fillRect(0, 0, W, H);
     ctx.restore();
   }
 }
@@ -130,13 +122,13 @@ function drawBg(ctx, skin, SIZE) {
  * ============================================================ */
 
 /** 热敏纸锯齿边 */
-function drawTearEdge(ctx, y, PAD, SIZE, color) {
+function drawTearEdge(ctx, y, PAD, W, color) {
   ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(PAD, y);
-  for (var tx = PAD; tx < SIZE - PAD; tx += 12) {
+  for (var tx = PAD; tx < W - PAD; tx += 12) {
     ctx.lineTo(tx + 6, y - 8);
     ctx.lineTo(tx + 12, y);
   }
@@ -145,7 +137,7 @@ function drawTearEdge(ctx, y, PAD, SIZE, color) {
 }
 
 /** 虚线分隔符（用字符串模拟，更有收据感） */
-function drawDashedLine(ctx, y, PAD, SIZE, skin) {
+function drawDashedLine(ctx, y, PAD, W, skin) {
   if (skin.features.dashedDivider) {
     ctx.save();
     ctx.font = '16px ' + skin.font.primary;
@@ -160,7 +152,7 @@ function drawDashedLine(ctx, y, PAD, SIZE, skin) {
     ctx.lineWidth = skin.features.ultraLight ? 0.5 : 1;
     ctx.beginPath();
     ctx.moveTo(PAD, y - 6);
-    ctx.lineTo(SIZE - PAD, y - 6);
+    ctx.lineTo(W - PAD, y - 6);
     ctx.stroke();
     ctx.restore();
   } else {
@@ -169,21 +161,21 @@ function drawDashedLine(ctx, y, PAD, SIZE, skin) {
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(PAD, y - 6);
-    ctx.lineTo(SIZE - PAD, y - 6);
+    ctx.lineTo(W - PAD, y - 6);
     ctx.stroke();
     ctx.restore();
   }
 }
 
 /** 热敏纸阴影效果 */
-function drawPaperShadow(ctx, PAD, SIZE) {
+function drawPaperShadow(ctx, PAD, W, H) {
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.12)';
   ctx.shadowBlur = 30;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 4;
   ctx.fillStyle = '#faf6f0';
-  ctx.fillRect(PAD - 2, 60, SIZE - PAD * 2 + 4, SIZE - 120);
+  ctx.fillRect(PAD - 2, 40, W - PAD * 2 + 4, H - 80);
   ctx.shadowColor = 'transparent';
   ctx.restore();
 }
@@ -336,19 +328,26 @@ function generateShareCard(data, skinName) {
   var skin = (window.SHARE_SKINS || {})[skinName];
   if (!skin) return document.createElement('canvas');
 
-  var SIZE = 1080;
+  var W = 1080;  // 固定宽度
   var SCALE = 2;
+
+  // 预计算高度：版本栏(100) + 品牌区(90) + 两栏标题(30) + 5行数据(5*38=190) + 底栏(60) + 上下边距
+  var rowCount = 5;
+  var rowH = 38;
+  var H = 80 + 48 + 90 + 28 + (rowCount * rowH) + 60 + 80; // ≈ 576
+  if (ft.tearEdge) H += 24; // 上下锯齿额外空间
+
   var canvas = document.createElement('canvas');
-  canvas.width = SIZE * SCALE;
-  canvas.height = SIZE * SCALE;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
 
   var ctx = canvas.getContext('2d');
   ctx.scale(SCALE, SCALE);
 
   var c = skin.colors;
   var ft = skin.features;
-  var PAD = 72;
-  var RIGHT = SIZE - PAD;
+  var PAD = 60;
+  var RIGHT = W - PAD;
 
   // 字体快捷方式
   var ff = skin.font;
@@ -366,11 +365,11 @@ function generateShareCard(data, skinName) {
   var isThermal = skinName === 'thermal';
 
   /* ========== 背景 ========== */
-  drawBg(ctx, skin, SIZE);
+  drawBg(ctx, skin, W, H);
 
   /* ========== 热敏纸阴影（在内容之下） ========== */
   if (ft.paperShadow) {
-    drawPaperShadow(ctx, PAD, SIZE);
+    drawPaperShadow(ctx, PAD, W, H);
   }
 
   /* ==========================================================
@@ -378,7 +377,7 @@ function generateShareCard(data, skinName) {
    *  顶部版本栏 → 品牌区 → 左右两栏（Usage / Tips）→ 底栏
    * ========================================================== */
   var y = 0;
-  var MID = SIZE / 2; // 左右两栏分隔线 X 坐标
+  var MID = W / 2; // 左右两栏分隔线 X 坐标
 
   // 简化模型名的工具函数
   function shortModelName(name) {
@@ -390,7 +389,7 @@ function generateShareCard(data, skinName) {
 
   /* ── 上边锯齿（thermal） ── */
   if (ft.tearEdge) {
-    drawTearEdge(ctx, 72, PAD, SIZE, c.line);
+    drawTearEdge(ctx, 60, PAD, W, c.line);
   }
 
   /* ==========================================================
@@ -461,7 +460,7 @@ function generateShareCard(data, skinName) {
 
   // 垂直分隔线（从这里到底部）
   var colDivTop = y;
-  var colDivBottom = SIZE - 120;
+  var colDivBottom = H - 80;
   ctx.beginPath();
   ctx.moveTo(MID, colDivTop);
   ctx.lineTo(MID, colDivBottom);
@@ -617,7 +616,7 @@ function generateShareCard(data, skinName) {
 
   /* ── 下边锯齿（thermal） ── */
   if (ft.tearEdge) {
-    drawTearEdge(ctx, SIZE - 50, PAD, SIZE, c.line);
+    drawTearEdge(ctx, H - 40, PAD, W, c.line);
   }
 
   return canvas;
