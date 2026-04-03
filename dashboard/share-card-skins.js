@@ -1,5 +1,5 @@
 /**
- * PinToken 分享卡片 — 5 套收据风格皮肤配置
+ * PinToken 分享卡片 — 5 套皮肤配置（V2 热力图版）
  * 供 share-card.js 渲染引擎使用
  */
 
@@ -24,6 +24,7 @@ const SHARE_SKINS = {
       paperShadow: true,
       paperNoise: true,
     },
+    heatmap: ['#e8e0d4', '#c4b8a8', '#8a7e6e', '#5a4e3e', '#2a2a2a'],
   },
 
   /* ── 2. 霓虹收据 ───────────────────────────────────── */
@@ -46,6 +47,7 @@ const SHARE_SKINS = {
       neonGlow: true,
       dashedDivider: false,
     },
+    heatmap: ['#1a1a1a', '#3d1800', '#7a3000', '#cc5500', '#FF6B35'],
   },
 
   /* ── 3. 碳纤维发票 ─────────────────────────────────── */
@@ -67,6 +69,7 @@ const SHARE_SKINS = {
       dashedDivider: false,
       thinLines: true,
     },
+    heatmap: ['#2a2a2a', '#3d2800', '#6b4400', '#cc7700', '#FF6B35'],
   },
 
   /* ── 4. 复古终端 ───────────────────────────────────── */
@@ -89,6 +92,7 @@ const SHARE_SKINS = {
       cursor: true,
       crtGlow: true,
     },
+    heatmap: ['#0c1a0c', '#0d2e0d', '#1a5c1a', '#27a327', '#33ff33'],
   },
 
   /* ── 5. 极简收据 ───────────────────────────────────── */
@@ -110,6 +114,7 @@ const SHARE_SKINS = {
       thinLines: true,
       ultraLight: true,
     },
+    heatmap: ['#eeeeee', '#ffd4c0', '#ffaa80', '#ff8040', '#FF6B35'],
   },
 };
 

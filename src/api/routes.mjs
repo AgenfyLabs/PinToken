@@ -136,8 +136,11 @@ export async function handleAPI(req, res, store, startedAt) {
     // GET /api/share-data — 返回生成分享卡片 V2 所需的全部数据
     if (pathname === '/api/share-data' && req.method === 'GET') {
       const month = await store.getMonthSummary();
+      const summary = await store.getSummary();
       const models = await store.getModelDistribution();
       const providers = await store.getProviderStats();
+      // 近 30 天每日 output token 活动（用于热力图渲染）
+      const dailyActivity = store.getDailyTokenActivity(30);
 
       // 订阅月费基准（Claude Code Max）
       const subscriptionCost = 100;
@@ -175,13 +178,16 @@ export async function handleAPI(req, res, store, startedAt) {
         month_label: monthLabel,
         month_label_en: monthLabelEn,
         month_cost: month.month_cost,
+        month_tokens: month.month_tokens,
+        today_tokens: summary.today_tokens,
+        today_output_tokens: summary.today_output_tokens,
         saved,
         saved_pct: savedPct,
         month_requests: month.month_requests,
-        month_tokens: month.month_tokens,
         provider_count: providerCount,
         tracking_days: trackingDays,
         top_models: topModels,
+        daily_activity: dailyActivity,
       }));
       return;
     }

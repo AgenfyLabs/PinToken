@@ -412,6 +412,24 @@ export function createStore(dbPath) {
   }
 
   /**
+   * 获取近 N 天每日 output token 活动量（用于分享卡片热力图）
+   * @param {number} days - 天数，默认 30
+   * @returns {Array<{ date: string, tokens: number }>}
+   */
+  function getDailyTokenActivity(days = 30) {
+    const rows = db.prepare(`
+      SELECT
+        DATE(timestamp) AS date,
+        COALESCE(SUM(output_tokens), 0) AS tokens
+      FROM requests
+      WHERE timestamp >= DATE('now', '-' || ? || ' days')
+      GROUP BY DATE(timestamp)
+      ORDER BY date ASC
+    `).all(days);
+    return rows;
+  }
+
+  /**
    * 关闭数据库连接
    */
   function close() {
@@ -433,6 +451,7 @@ export function createStore(dbPath) {
     hasRequest,
     findByDedupeHash,
     getTrackingDays,
+    getDailyTokenActivity,
     getScanMeta,
     setScanMeta,
     close,
