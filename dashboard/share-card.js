@@ -498,30 +498,9 @@ function generateShareCard(data, skinName) {
   drawDashedLine(ctx, y, PAD, SIZE, skin);
 
   /* ==========================================================
-   *  区域 4：ACTIVITY — 本月活动格子
+   *  区域 4：模型分布 — 一行文字
    * ========================================================== */
-  y += 28;
-
-  // 小标签
-  ctx.font = fp(14);
-  ctx.fillStyle = c.textDim;
-  ctx.fillText(isRetro ? '> ACTIVITY' : 'ACTIVITY', PAD, y);
-
-  // 绘制活动格子
-  var gridStartY = y + 24;
-  var gridOffColor = skin.heatmap ? skin.heatmap[0] : '#333';
-  var gridOnColor = skin.heatmap ? skin.heatmap[4] : '#bbb';
-  var gridH = drawActivityGrid(
-    ctx, data.daily_activity || [],
-    gridOffColor, gridOnColor,
-    PAD, gridStartY, RIGHT - PAD,
-    skin, skinName
-  );
-
-  /* ==========================================================
-   *  区域 5：模型分布 — 一行文字
-   * ========================================================== */
-  y = gridStartY + gridH + 20;
+  y += 40;
 
   var models = (data.top_models || []).slice(0, 4);
   if (models.length > 0) {
