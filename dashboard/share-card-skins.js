@@ -1,33 +1,30 @@
 /**
- * PinToken 分享卡片 — 5 套皮肤配置（V2 热力图版）
+ * PinToken 分享卡片 — 5 套皮肤配置
  * 供 share-card.js 渲染引擎使用
+ * 深色模块化卡片风格
  */
 
 const SHARE_SKINS = {
-  /* ── 1. 热敏纸收据 ─────────────────────────────────── */
+  /* ── 1. 深色经典（默认） ─────────────────────────────── */
   thermal: {
     name: 'Thermal',
-    nameZh: '热敏纸',
-    bg: { color: '#faf6f0' },
+    nameZh: '经典',
+    bg: { color: '#141414' },
     font: { primary: 'monospace', display: 'monospace', weight: 'bold' },
     colors: {
-      text: '#2a2a2a',
-      textDim: '#888888',
-      accent: '#2a2a2a',
-      highlight: '#2a2a2a',
-      line: '#cccccc',
+      text: '#e8e8e8',
+      textDim: '#777777',
+      accent: '#FF6B35',
+      highlight: '#e8e8e8',
+      line: '#2a2a2a',
       brand: '#FF6B35',
+      cardBg: 'rgba(255,255,255,0.04)',
     },
-    features: {
-      tearEdge: true,
-      dashedDivider: true,
-      paperShadow: true,
-      paperNoise: true,
-    },
-    heatmap: ['#e8e0d4', '#c4b8a8', '#8a7e6e', '#5a4e3e', '#2a2a2a'],
+    features: {},
+    heatmap: ['#1a1a1a', '#3d2200', '#7a4400', '#cc6600', '#FF6B35'],
   },
 
-  /* ── 2. 霓虹收据 ───────────────────────────────────── */
+  /* ── 2. 霓虹 ─────────────────────────────────────────── */
   neon: {
     name: 'Neon',
     nameZh: '霓虹',
@@ -35,86 +32,73 @@ const SHARE_SKINS = {
     font: { primary: 'sans-serif', display: 'sans-serif', weight: 'bold' },
     colors: {
       text: '#ffffff',
-      textDim: '#666666',
+      textDim: '#555555',
       accent: '#FF6B35',
       highlight: '#FF6B35',
-      line: '#333333',
+      line: '#222222',
       brand: '#FF6B35',
       glow: '#FF6B35',
-      glowAlt: '#27c93f',
+      cardBg: 'rgba(255,107,53,0.04)',
     },
-    features: {
-      neonGlow: true,
-      dashedDivider: false,
-    },
+    features: { neonGlow: true },
     heatmap: ['#1a1a1a', '#3d1800', '#7a3000', '#cc5500', '#FF6B35'],
   },
 
-  /* ── 3. 碳纤维发票 ─────────────────────────────────── */
+  /* ── 3. 碳纤维 ───────────────────────────────────────── */
   carbon: {
     name: 'Carbon',
     nameZh: '碳纤维',
-    bg: { color: '#1a1a1a' },
+    bg: { color: '#161616' },
     font: { primary: 'sans-serif', display: 'sans-serif', weight: 'bold' },
     colors: {
       text: '#e0e0e0',
-      textDim: '#777777',
+      textDim: '#666666',
       accent: '#FF6B35',
       highlight: '#FF6B35',
-      line: '#333333',
+      line: '#2a2a2a',
       brand: '#FF6B35',
+      cardBg: 'rgba(255,255,255,0.03)',
     },
-    features: {
-      carbonTexture: true,
-      dashedDivider: false,
-      thinLines: true,
-    },
+    features: { carbonTexture: true },
     heatmap: ['#2a2a2a', '#3d2800', '#6b4400', '#cc7700', '#FF6B35'],
   },
 
-  /* ── 4. 复古终端 ───────────────────────────────────── */
+  /* ── 4. 复古终端 ─────────────────────────────────────── */
   retro: {
     name: 'Retro',
-    nameZh: '复古终端',
-    bg: { color: '#0c1a0c' },
+    nameZh: '终端',
+    bg: { color: '#0a150a' },
     font: { primary: 'monospace', display: 'monospace', weight: 'bold' },
     colors: {
       text: '#33ff33',
-      textDim: '#1a8a1a',
+      textDim: '#1a7a1a',
       accent: '#33ff33',
       highlight: '#33ff33',
-      line: '#1a8a1a',
+      line: '#1a3a1a',
       brand: '#33ff33',
+      cardBg: 'rgba(51,255,51,0.03)',
     },
-    features: {
-      scanlines: true,
-      dashedDivider: true,
-      cursor: true,
-      crtGlow: true,
-    },
+    features: { scanlines: true, crtGlow: true },
     heatmap: ['#0c1a0c', '#0d2e0d', '#1a5c1a', '#27a327', '#33ff33'],
   },
 
-  /* ── 5. 极简收据 ───────────────────────────────────── */
+  /* ── 5. 极简 ─────────────────────────────────────────── */
   minimal: {
     name: 'Minimal',
     nameZh: '极简',
-    bg: { color: '#ffffff' },
+    bg: { color: '#1a1a1a' },
     font: { primary: 'sans-serif', display: 'sans-serif', weight: '800' },
     colors: {
-      text: '#111111',
-      textDim: '#999999',
+      text: '#f0f0f0',
+      textDim: '#666666',
       accent: '#FF6B35',
-      highlight: '#111111',
-      line: '#e0e0e0',
+      highlight: '#f0f0f0',
+      line: '#2a2a2a',
       brand: '#FF6B35',
+      cardBg: 'rgba(255,255,255,0.05)',
     },
-    features: {
-      dashedDivider: false,
-      thinLines: true,
-      ultraLight: true,
-    },
-    heatmap: ['#eeeeee', '#ffd4c0', '#ffaa80', '#ff8040', '#FF6B35'],
+    features: {},
+    heatmap: ['#222222', '#3d2200', '#7a4400', '#cc6600', '#FF6B35'],
   },
 };
 

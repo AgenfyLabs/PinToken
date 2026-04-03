@@ -1,7 +1,7 @@
 /**
- * PinToken 分享卡片 — 终端面板风格 Canvas 渲染引擎
- * 宽度固定 1080，高度自适应内容
- * 依赖 share-card-skins.js 提供 SHARE_SKINS 配置
+ * PinToken 分享卡片 — 深色模块化卡片布局
+ * 参考 Virtus Task Manager 设计风格：深色圆角卡片嵌套、大号数字、橙色 accent
+ * 宽度 1080，高度自适应。Retina 2x。
  *
  * API: window.generateShareCard(data, skinName) → <canvas>
  */
@@ -11,15 +11,20 @@
  * ============================================================ */
 
 function fmtTokens(n) {
-  if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  if (n >= 1e9) return (n / 1e9).toFixed(1);
+  if (n >= 1e6) return (n / 1e6).toFixed(1);
+  if (n >= 1e3) return (n / 1e3).toFixed(1);
   return String(n);
 }
 
-function fmtMoney(n) {
-  return '$' + (n || 0).toFixed(2);
+function fmtTokenUnit(n) {
+  if (n >= 1e9) return 'B';
+  if (n >= 1e6) return 'M';
+  if (n >= 1e3) return 'K';
+  return '';
 }
+
+function fmtMoney(n) { return '$' + (n || 0).toFixed(0); }
 
 function hexRgba(hex, a) {
   if (!hex || hex.startsWith('rgba') || hex.startsWith('rgb')) return hex;
@@ -29,14 +34,15 @@ function hexRgba(hex, a) {
   return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
 }
 
-function getSkinKey(skin) {
-  for (var k in window.SHARE_SKINS || {}) {
-    if (window.SHARE_SKINS[k] === skin) return k;
-  }
-  return '';
+function shortModel(name) {
+  return name
+    .replace(/^claude-/, '').replace(/^gpt-/, '')
+    .replace(/-\d{8}$/, '').replace(/-\d+[km]?$/, '')
+    .split('-').map(function(s) { return s.charAt(0).toUpperCase() + s.slice(1); }).join(' ');
 }
 
-function drawRoundRect(ctx, x, y, w, h, r) {
+function rr(ctx, x, y, w, h, r) {
+  if (r > h / 2) r = h / 2;
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -50,112 +56,60 @@ function drawRoundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function shortModelName(name) {
-  return name
-    .replace(/^claude-/, '').replace(/^gpt-/, '')
-    .replace(/-\d{8}$/, '').replace(/-\d+[km]?$/, '')
-    .split('-').map(function(s) { return s.charAt(0).toUpperCase() + s.slice(1); }).join(' ');
+/** 估算用量排名百分位（基于月 token 消耗量） */
+function estimateRank(monthTokens) {
+  // 基于 Claude Code 用户月消耗分布估算
+  // 大多数用户 < 50M tokens/月，重度用户 100-500M，极限用户 500M+
+  if (monthTokens >= 500e6) return 99;
+  if (monthTokens >= 200e6) return 95;
+  if (monthTokens >= 100e6) return 90;
+  if (monthTokens >= 50e6) return 80;
+  if (monthTokens >= 20e6) return 65;
+  if (monthTokens >= 10e6) return 50;
+  if (monthTokens >= 5e6) return 35;
+  return 20;
 }
 
-/* ============================================================
- *  背景绘制
- * ============================================================ */
+/** 生成 PRD 规定的 Tips（按优先级排序，最多 4 条） */
+function generateTips(data) {
+  var tips = [];
 
-function drawBg(ctx, skin, W, H) {
-  var key = getSkinKey(skin);
+  // 优先级 1: 高峰提醒
+  var hour = new Date().getHours();
+  // 北京时间 21:00-03:00 = UTC 13:00-19:00
+  if (hour >= 13 && hour <= 19) {
+    tips.push('当前处于高峰时段，注意限速');
+  } else if (hour >= 11 && hour < 13) {
+    tips.push('即将进入高峰，建议提前完成任务');
+  }
 
-  ctx.fillStyle = skin.bg.color;
-  ctx.fillRect(0, 0, W, H);
-
-  // 热敏纸噪点
-  if (skin.features.paperNoise) {
-    ctx.save();
-    for (var i = 0; i < 5000; i++) {
-      ctx.fillStyle = 'rgba(0,0,0,' + (Math.random() * 0.025) + ')';
-      ctx.fillRect(Math.random() * W, Math.random() * H, 1, 1);
+  // 优先级 2: 模型降级建议
+  if (data.top_models && data.top_models[0]) {
+    var topPct = data.top_models[0].pct;
+    var topName = shortModel(data.top_models[0].name);
+    if (topPct > 80 && topName.toLowerCase().indexOf('opus') >= 0) {
+      tips.push('简单任务可降级用 Sonnet 省额度');
     }
-    ctx.restore();
   }
 
-  // 碳纤维纹理
-  if (skin.features.carbonTexture) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.025)';
-    ctx.lineWidth = 0.5;
-    for (var d = -H; d < W + H; d += 6) {
-      ctx.beginPath(); ctx.moveTo(d, 0); ctx.lineTo(d + H, H); ctx.stroke();
-    }
-    ctx.restore();
+  // 优先级 3: 用量排名
+  var rank = estimateRank(data.month_tokens || 0);
+  if (rank >= 50) {
+    tips.push('你的用量超过了 ' + rank + '% 的开发者');
   }
 
-  // CRT 扫描线
-  if (skin.features.scanlines) {
-    ctx.save();
-    for (var sy = 0; sy < H; sy += 3) {
-      ctx.fillStyle = 'rgba(0,0,0,0.12)';
-      ctx.fillRect(0, sy, W, 1);
-    }
-    ctx.restore();
+  // 优先级 4: 月度趋势 / 活跃天数
+  var activeDays = (data.daily_activity || []).filter(function(d) { return d.tokens > 0; }).length;
+  if (activeDays > 0) {
+    tips.push('本月已活跃 ' + activeDays + ' 天');
   }
 
-  // 霓虹光斑
-  if (key === 'neon') {
-    ctx.save();
-    var g1 = ctx.createRadialGradient(W * 0.3, H * 0.35, 0, W * 0.3, H * 0.35, 350);
-    g1.addColorStop(0, 'rgba(255,107,53,0.12)');
-    g1.addColorStop(1, 'rgba(255,107,53,0)');
-    ctx.fillStyle = g1;
-    ctx.fillRect(0, 0, W, H);
-    var g2 = ctx.createRadialGradient(W * 0.8, H * 0.7, 0, W * 0.8, H * 0.7, 200);
-    g2.addColorStop(0, 'rgba(39,201,63,0.07)');
-    g2.addColorStop(1, 'rgba(39,201,63,0)');
-    ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
+  // 补充：Provider 数量
+  if (tips.length < 4 && data.provider_count > 1) {
+    tips.push('使用了 ' + data.provider_count + ' 个 Provider');
   }
 
-  // CRT 中心光晕
-  if (skin.features.crtGlow) {
-    ctx.save();
-    var cg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.55);
-    cg.addColorStop(0, 'rgba(51,255,51,0.035)');
-    cg.addColorStop(1, 'rgba(51,255,51,0)');
-    ctx.fillStyle = cg;
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
-  }
-}
-
-/* ============================================================
- *  装饰函数
- * ============================================================ */
-
-/** 热敏纸锯齿边 */
-function drawTearEdge(ctx, y, PAD, W, color) {
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(PAD, y);
-  for (var tx = PAD; tx < W - PAD; tx += 10) {
-    ctx.lineTo(tx + 5, y - 6);
-    ctx.lineTo(tx + 10, y);
-  }
-  ctx.stroke();
-  ctx.restore();
-}
-
-/** 霓虹发光文字 */
-function drawGlow(ctx, text, x, y, color, blur) {
-  ctx.save();
-  ctx.shadowColor = color;
-  ctx.shadowBlur = blur || 30;
-  ctx.fillText(text, x, y);
-  ctx.shadowBlur = (blur || 30) * 0.35;
-  ctx.fillText(text, x, y);
-  ctx.shadowBlur = 0;
-  ctx.fillText(text, x, y);
-  ctx.restore();
+  return tips.slice(0, 4);
 }
 
 /* ============================================================
@@ -169,25 +123,37 @@ function generateShareCard(data, skinName) {
 
   var W = 1080;
   var SCALE = 2;
-  var ft = skin.features;
   var c = skin.colors;
-  var PAD = 56;
-  var RIGHT = W - PAD;
+  var ft = skin.features || {};
   var ff = skin.font;
+  var isNeon = skinName === 'neon';
+  var isRetro = skinName === 'retro';
+  var isMinimal = skinName === 'minimal';
+  var isThermal = skinName === 'thermal';
+  var isCarbon = skinName === 'carbon';
 
-  // 字体快捷方式
+  // 字体快捷
   function fp(sz, wt) { return (wt || 'normal') + ' ' + sz + 'px ' + ff.primary; }
   function fd(sz, wt) { return (wt || ff.weight || 'bold') + ' ' + sz + 'px ' + ff.display; }
 
-  var isNeon = skinName === 'neon';
-  var isRetro = skinName === 'retro';
+  // 颜色
+  var BG = skin.bg.color;
+  var CARD = c.cardBg || hexRgba(c.text, 0.04);
+  var BORDER = c.line;
+  var ACCENT = c.brand;
+  var TEXT = c.text;
+  var DIM = c.textDim;
+  var HIGHLIGHT = c.highlight;
+
+  // 布局参数
+  var PAD = 40;
+  var GAP = 16;
+  var RIGHT = W - PAD;
+  var CW = W - PAD * 2; // 内容总宽
 
   // 预计算高度
-  var ROW_H = 44;
-  var ROWS = 5;
-  // 品牌区(56) + 分隔(2) + 栏标题(32) + 数据行(5×44=220) + 底栏(48) + 边距(上40+下40)
-  var H = 40 + 56 + 2 + 32 + (ROWS * ROW_H) + 16 + 48 + 40;
-  if (ft.tearEdge) H += 20;
+  // 品牌栏(60) + gap + 顶部两卡片行(160) + gap + 中间两栏(200) + gap + 底栏(48)
+  var H = PAD + 52 + GAP + 160 + GAP + 210 + GAP + 44 + PAD;
 
   var canvas = document.createElement('canvas');
   canvas.width = W * SCALE;
@@ -196,204 +162,321 @@ function generateShareCard(data, skinName) {
   ctx.scale(SCALE, SCALE);
 
   /* ========== 背景 ========== */
-  drawBg(ctx, skin, W, H);
+  // 底色
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
 
-  /* ========== 锯齿上边（thermal） ========== */
-  if (ft.tearEdge) drawTearEdge(ctx, 36, PAD, W, c.line);
-
-  var y = ft.tearEdge ? 50 : 40;
-
-  /* ==========================================================
-   *  品牌栏：一行搞定 — PinToken · Slogan · 月份
-   * ========================================================== */
-
-  // 左：品牌名
-  ctx.textAlign = 'left';
-  ctx.font = fd(22);
-  ctx.fillStyle = c.brand;
+  // 皮肤专属背景效果
+  if (ft.paperNoise) {
+    for (var i = 0; i < 4000; i++) {
+      ctx.fillStyle = 'rgba(0,0,0,' + (Math.random() * 0.02) + ')';
+      ctx.fillRect(Math.random() * W, Math.random() * H, 1, 1);
+    }
+  }
+  if (ft.carbonTexture) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+    ctx.lineWidth = 0.5;
+    for (var d = -H; d < W + H; d += 6) {
+      ctx.beginPath(); ctx.moveTo(d, 0); ctx.lineTo(d + H, H); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  if (ft.scanlines) {
+    for (var sy = 0; sy < H; sy += 3) {
+      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      ctx.fillRect(0, sy, W, 1);
+    }
+  }
   if (isNeon) {
-    drawGlow(ctx, 'PinToken', PAD, y + 22, c.glow, 20);
-  } else {
-    ctx.fillText('PinToken', PAD, y + 22);
+    ctx.save();
+    var g1 = ctx.createRadialGradient(W * 0.25, H * 0.3, 0, W * 0.25, H * 0.3, 350);
+    g1.addColorStop(0, 'rgba(255,107,53,0.08)');
+    g1.addColorStop(1, 'rgba(255,107,53,0)');
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, W, H);
+    var g2 = ctx.createRadialGradient(W * 0.8, H * 0.7, 0, W * 0.8, H * 0.7, 200);
+    g2.addColorStop(0, 'rgba(39,201,63,0.05)');
+    g2.addColorStop(1, 'rgba(39,201,63,0)');
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+  if (ft.crtGlow) {
+    ctx.save();
+    var cg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.5);
+    cg.addColorStop(0, 'rgba(51,255,51,0.03)');
+    cg.addColorStop(1, 'rgba(51,255,51,0)');
+    ctx.fillStyle = cg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
   }
 
-  // 中：Slogan（紧跟品牌名）
-  var brandW = ctx.measureText('PinToken').width;
-  ctx.font = fp(13);
-  ctx.fillStyle = c.textDim;
-  ctx.fillText('Pin your token. Save your dollar.', PAD + brandW + 16, y + 22);
+  /** 绘制霓虹发光文字 */
+  function glow(text, x, y, color, blur) {
+    if (!isNeon) { ctx.fillText(text, x, y); return; }
+    ctx.save();
+    ctx.shadowColor = color || ACCENT;
+    ctx.shadowBlur = blur || 20;
+    ctx.fillText(text, x, y);
+    ctx.shadowBlur = (blur || 20) * 0.3;
+    ctx.fillText(text, x, y);
+    ctx.shadowBlur = 0;
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
 
-  // 右：月份 + 模型
+  /** 绘制内嵌卡片（圆角矩形 + 描边） */
+  function card(x, y, w, h, radius) {
+    radius = radius || 16;
+    ctx.fillStyle = CARD;
+    rr(ctx, x, y, w, h, radius);
+    ctx.fill();
+    if (!isMinimal) {
+      ctx.strokeStyle = BORDER;
+      ctx.lineWidth = 1;
+      rr(ctx, x, y, w, h, radius);
+      ctx.stroke();
+    }
+  }
+
+  var y = PAD;
+
+  /* ==========================================================
+   *  品牌栏
+   * ========================================================== */
+  // 左：PinToken
+  ctx.textAlign = 'left';
+  ctx.font = fd(24);
+  ctx.fillStyle = ACCENT;
+  glow('PinToken', PAD, y + 28, ACCENT, 18);
+
+  // 中：Slogan
+  var bw = ctx.measureText('PinToken').width;
+  ctx.font = fp(13);
+  ctx.fillStyle = DIM;
+  ctx.fillText('Pin your token. Save your dollar.', PAD + bw + 14, y + 28);
+
+  // 右：月份
   ctx.textAlign = 'right';
   ctx.font = fp(14);
-  ctx.fillStyle = c.textDim;
-  var topModel = (data.top_models && data.top_models[0]) ? shortModelName(data.top_models[0].name) : '';
-  var rightMeta = (data.month_label_en || data.month_label || '');
-  if (topModel) rightMeta = topModel + '  ·  ' + rightMeta;
-  ctx.fillText(rightMeta, RIGHT, y + 22);
+  ctx.fillStyle = DIM;
+  ctx.fillText(data.month_label_en || data.month_label || '', RIGHT, y + 28);
   ctx.textAlign = 'left';
 
-  /* ── 品牌色分隔线 ── */
-  y += 42;
-  ctx.strokeStyle = c.brand;
+  // 品牌色细线
+  y += 44;
+  ctx.strokeStyle = ACCENT;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(PAD, y);
   ctx.lineTo(RIGHT, y);
   ctx.stroke();
 
-  /* ==========================================================
-   *  两栏区域
-   * ========================================================== */
-  var colTop = y;
-  // 左栏 55%，右栏 45%
-  var MID = PAD + Math.round((RIGHT - PAD) * 0.55);
+  y += GAP;
 
-  // 垂直分隔线
-  var colBottom = y + 32 + ROWS * ROW_H + 8;
-  ctx.strokeStyle = c.line;
-  ctx.lineWidth = 1;
+  /* ==========================================================
+   *  第一行：三张数据卡片（今日消耗 / 用量排名 / 本月累计）
+   * ========================================================== */
+  var row1H = 160;
+  var c1W = Math.floor(CW * 0.38); // 今日消耗（较宽）
+  var c2W = Math.floor(CW * 0.24); // 用量排名
+  var c3W = CW - c1W - c2W - GAP * 2; // 本月累计
+
+  // 卡片 1: 今日消耗
+  var cx1 = PAD;
+  card(cx1, y, c1W, row1H);
+
+  ctx.font = fp(12);
+  ctx.fillStyle = DIM;
+  ctx.fillText('Today output', cx1 + 20, y + 30);
+
+  // 超大数字
+  var todayNum = fmtTokens(data.today_output_tokens || 0);
+  var todayUnit = fmtTokenUnit(data.today_output_tokens || 0);
+  ctx.font = fd(56);
+  ctx.fillStyle = ACCENT;
+  glow(todayNum, cx1 + 20, y + 95, ACCENT, 25);
+  // 单位（小号，紧跟数字）
+  var numW = ctx.measureText(todayNum).width;
+  ctx.font = fd(24);
+  ctx.fillStyle = DIM;
+  ctx.fillText(todayUnit, cx1 + 20 + numW + 4, y + 95);
+
+  ctx.font = fp(12);
+  ctx.fillStyle = DIM;
+  ctx.fillText('tokens', cx1 + 20, y + 116);
+
+  // 卡片 2: 用量排名（圆形进度指示器）
+  var cx2 = cx1 + c1W + GAP;
+  card(cx2, y, c2W, row1H);
+
+  ctx.font = fp(12);
+  ctx.fillStyle = DIM;
+  ctx.textAlign = 'center';
+  ctx.fillText('Rank', cx2 + c2W / 2, y + 30);
+
+  // 圆形进度环
+  var rank = estimateRank(data.month_tokens || 0);
+  var ringCx = cx2 + c2W / 2;
+  var ringCy = y + 82;
+  var ringR = 36;
+
+  // 背景环
   ctx.beginPath();
-  ctx.moveTo(MID, colTop);
-  ctx.lineTo(MID, colBottom);
+  ctx.arc(ringCx, ringCy, ringR, 0, Math.PI * 2);
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 6;
   ctx.stroke();
 
-  /* ── 栏标题 ── */
-  y += 26;
-  ctx.font = fd(14);
-  ctx.fillStyle = c.brand;
-  if (isNeon) {
-    drawGlow(ctx, 'Usage', PAD + 4, y, c.glow, 8);
-    drawGlow(ctx, 'Tips', MID + 16, y, c.glow, 8);
-  } else {
-    ctx.fillText(isRetro ? '> Usage' : 'Usage', PAD + 4, y);
-    ctx.fillText(isRetro ? '> Tips' : 'Tips', MID + 16, y);
+  // 进度环
+  ctx.beginPath();
+  ctx.arc(ringCx, ringCy, ringR, -Math.PI / 2, -Math.PI / 2 + (rank / 100) * Math.PI * 2);
+  ctx.strokeStyle = ACCENT;
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+
+  // 中心数字
+  ctx.font = fd(28);
+  ctx.fillStyle = TEXT;
+  ctx.textAlign = 'center';
+  glow(rank + '%', ringCx, ringCy + 10, ACCENT, 12);
+
+  ctx.font = fp(11);
+  ctx.fillStyle = DIM;
+  ctx.fillText('超过开发者', ringCx, y + row1H - 14);
+  ctx.textAlign = 'left';
+
+  // 卡片 3: 本月累计
+  var cx3 = cx2 + c2W + GAP;
+  card(cx3, y, c3W, row1H);
+
+  ctx.font = fp(12);
+  ctx.fillStyle = DIM;
+  ctx.fillText('This month', cx3 + 20, y + 30);
+
+  var monthNum = fmtTokens(data.month_tokens || 0);
+  var monthUnit = fmtTokenUnit(data.month_tokens || 0);
+  ctx.font = fd(48);
+  ctx.fillStyle = HIGHLIGHT;
+  glow(monthNum, cx3 + 20, y + 82, ACCENT, 18);
+  var mnW = ctx.measureText(monthNum).width;
+  ctx.font = fd(22);
+  ctx.fillStyle = DIM;
+  ctx.fillText(monthUnit, cx3 + 20 + mnW + 4, y + 82);
+
+  // 花费副标
+  ctx.font = fp(14);
+  ctx.fillStyle = ACCENT;
+  ctx.fillText(fmtMoney(data.month_cost), cx3 + 20, y + 108);
+
+  // 模型分布（小字）
+  var models = (data.top_models || []).slice(0, 2);
+  if (models.length > 0) {
+    ctx.font = fp(12);
+    ctx.fillStyle = DIM;
+    var modelStr = models.map(function(m) { return shortModel(m.name) + ' ' + m.pct + '%'; }).join('  ·  ');
+    ctx.fillText(modelStr, cx3 + 20, y + 132);
   }
 
+  y += row1H + GAP;
+
   /* ==========================================================
-   *  左栏：Usage 数据
-   *  标签 14px dim + 数值 24px bold highlight，大小对比 = 冲击力
+   *  第二行：左栏 Usage 明细 + 右栏 Tips
    * ========================================================== */
-  var rowY = y + 32;
-  var LX = PAD + 4;
-  var LVX = MID - 14;
+  var row2H = 210;
+  var leftW = Math.floor(CW * 0.52);
+  var rightW = CW - leftW - GAP;
 
-  function row(label, value, valColor) {
-    // 标签（左对齐，dim）
+  // 左卡：Usage 明细
+  var lx = PAD;
+  card(lx, y, leftW, row2H);
+
+  ctx.font = fd(14);
+  ctx.fillStyle = ACCENT;
+  ctx.fillText(isRetro ? '> Usage' : 'Usage', lx + 20, y + 30);
+
+  // 数据行
+  var rowY = y + 56;
+  var ROW_H = 36;
+  var valX = lx + leftW - 20;
+
+  function drawUsageRow(label, value, valColor) {
     ctx.font = fp(14);
-    ctx.fillStyle = c.textDim;
+    ctx.fillStyle = DIM;
     ctx.textAlign = 'left';
-    ctx.fillText(label, LX, rowY);
-
-    // 数值（右对齐，大号 bold）
-    ctx.font = fd(22);
-    ctx.fillStyle = valColor || c.highlight;
+    ctx.fillText(label, lx + 20, rowY);
+    ctx.font = fd(18);
+    ctx.fillStyle = valColor || HIGHLIGHT;
     ctx.textAlign = 'right';
-    if (isNeon) {
-      drawGlow(ctx, value, LVX, rowY, c.glow, 10);
-    } else {
-      ctx.fillText(value, LVX, rowY);
-    }
+    glow(value, valX, rowY, ACCENT, 8);
     ctx.textAlign = 'left';
     rowY += ROW_H;
   }
 
-  row('今日消耗', fmtTokens(data.today_output_tokens || 0), c.highlight);
-  row('本月累计', fmtTokens(data.month_tokens || 0), c.highlight);
-  row('API 花费', fmtMoney(data.month_cost), c.brand);
-  row('追踪天数', String(data.tracking_days || 0) + ' 天', c.text);
+  drawUsageRow('今日消耗', fmtTokens(data.today_output_tokens || 0) + fmtTokenUnit(data.today_output_tokens || 0) + ' tokens', HIGHLIGHT);
+  drawUsageRow('本月累计', fmtTokens(data.month_tokens || 0) + fmtTokenUnit(data.month_tokens || 0) + ' tokens', HIGHLIGHT);
+  drawUsageRow('API 花费', fmtMoney(data.month_cost), ACCENT);
+  drawUsageRow('追踪天数', (data.tracking_days || 0) + ' 天', TEXT);
 
-  // 状态行特殊处理：绿点 + 文字
+  // 状态行
   ctx.font = fp(14);
-  ctx.fillStyle = c.textDim;
+  ctx.fillStyle = DIM;
   ctx.textAlign = 'left';
-  ctx.fillText('当前状态', LX, rowY);
-  ctx.font = fd(22);
-  ctx.fillStyle = c.accent;
+  ctx.fillText('当前状态', lx + 20, rowY);
+  ctx.font = fd(18);
   ctx.textAlign = 'right';
-  var statusText = '● 正常';
-  if (isNeon) {
-    drawGlow(ctx, statusText, LVX, rowY, '#27c93f', 10);
-  } else {
-    ctx.fillText(statusText, LVX, rowY);
-  }
+  // 绿色状态
+  var greenColor = isRetro ? '#33ff33' : '#27c93f';
+  ctx.fillStyle = greenColor;
+  glow('● 正常', valX, rowY, greenColor, 8);
   ctx.textAlign = 'left';
 
-  /* ==========================================================
-   *  右栏：Tips（动态生成，3-4 条）
-   * ========================================================== */
-  var tipY = y + 32;
-  var tipX = MID + 16;
-  var tipH = ROW_H;
+  // 右卡：Tips
+  var rx = lx + leftW + GAP;
+  card(rx, y, rightW, row2H);
 
-  var tips = [];
-  if (data.top_models && data.top_models[0]) {
-    tips.push(shortModelName(data.top_models[0].name) + ' 占比 ' + data.top_models[0].pct + '%');
-  }
-  var activeDays = (data.daily_activity || []).filter(function(d) { return d.tokens > 0; }).length;
-  if (activeDays > 0) tips.push('本月已活跃 ' + activeDays + ' 天');
-  if (data.month_cost > 100) {
-    tips.push('已超过 Max 订阅月费');
-  } else if (data.month_cost > 0) {
-    tips.push('花费 ' + fmtMoney(data.month_cost));
-  }
-  if (data.provider_count > 1) tips.push(data.provider_count + ' 个 Provider');
-  if (tips.length < 3) tips.push('pintoken.ai');
+  ctx.font = fd(14);
+  ctx.fillStyle = ACCENT;
+  ctx.fillText(isRetro ? '> Tips' : 'Tips', rx + 20, y + 30);
 
-  for (var ti = 0; ti < Math.min(tips.length, ROWS); ti++) {
+  // 生成 PRD 规定的 Tips
+  var tips = generateTips(data);
+  var tipY = y + 58;
+  var TIP_H = 36;
+
+  for (var ti = 0; ti < tips.length; ti++) {
     // 橙色前缀点
     ctx.font = fd(14);
-    ctx.fillStyle = c.brand;
-    if (isNeon) {
-      drawGlow(ctx, '·', tipX, tipY, c.glow, 4);
-    } else {
-      ctx.fillText('·', tipX, tipY);
-    }
-    // Tip 文字
+    ctx.fillStyle = ACCENT;
+    glow('·', rx + 20, tipY, ACCENT, 4);
+    // Tip 内容
     ctx.font = fp(14);
-    ctx.fillStyle = c.text;
-    ctx.fillText(tips[ti], tipX + 14, tipY);
-    tipY += tipH;
+    ctx.fillStyle = TEXT;
+    // 截断到 18 个字符
+    var tipText = tips[ti];
+    if (tipText.length > 18) tipText = tipText.slice(0, 17) + '…';
+    ctx.fillText(tipText, rx + 36, tipY);
+    tipY += TIP_H;
   }
+
+  y += row2H + GAP;
 
   /* ==========================================================
    *  底栏
    * ========================================================== */
-  // 底部水平线
-  y = colBottom;
-  ctx.strokeStyle = c.line;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(PAD, y);
-  ctx.lineTo(RIGHT, y);
-  ctx.stroke();
-
-  y += 28;
-
-  // 左：域名
   ctx.font = fp(13);
-  ctx.fillStyle = c.textDim;
+  ctx.fillStyle = DIM;
   ctx.textAlign = 'left';
-  var footText = isRetro ? '❯ pintoken.ai' : 'Track your AI spending → pintoken.ai';
-  if (isNeon) {
-    drawGlow(ctx, footText, PAD, y, c.glow, 6);
-  } else {
-    ctx.fillText(footText, PAD, y);
-  }
+  ctx.fillText(isRetro ? '❯ pintoken.ai' : 'pintoken.ai  ·  Track your AI spending', PAD, y + 24);
 
-  // 右：#PinToken
   ctx.font = fd(15);
-  ctx.fillStyle = c.brand;
+  ctx.fillStyle = ACCENT;
   ctx.textAlign = 'right';
-  if (isNeon) {
-    drawGlow(ctx, '#PinToken', RIGHT, y, c.glow, 10);
-  } else {
-    ctx.fillText('#PinToken', RIGHT, y);
-  }
+  glow('#PinToken', RIGHT, y + 24, ACCENT, 10);
   ctx.textAlign = 'left';
-
-  /* ── 锯齿下边（thermal） ── */
-  if (ft.tearEdge) drawTearEdge(ctx, H - 30, PAD, W, c.line);
 
   return canvas;
 }
