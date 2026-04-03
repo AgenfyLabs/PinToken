@@ -1,5 +1,5 @@
 {
-  "name": "pintoken-cli",
+  "name": "pintoken",
   "version": "0.1.0",
   "description": "Track your LLM API usage & costs locally — token counts, costs, peak alerts, shareable report cards",
   "type": "module",
