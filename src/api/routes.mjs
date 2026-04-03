@@ -154,6 +154,8 @@ export async function handleAPI(req, res, store, startedAt) {
 
       // 月份标签：中文格式 "2026 年 4 月"
       const monthLabel = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' });
+      // 英文月份标签：收据皮肤使用，格式如 "April 2026"
+      const monthLabelEn = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
 
       // Top 模型：按 cost DESC 排序，取前 4，过滤 0% 模型
       const filtered = models.filter(m => m.provider !== 'unknown' && m.total_cost > 0);
@@ -164,12 +166,14 @@ export async function handleAPI(req, res, store, startedAt) {
         .map(m => ({
           name: m.model,
           pct: totalCost > 0 ? Math.round(m.total_cost / totalCost * 100) : 0,
+          cost: Math.round(m.total_cost * 100) / 100,  // 每个模型的花费金额，保留两位小数
         }))
         .filter(m => m.pct > 0);
 
       res.writeHead(200);
       res.end(JSON.stringify({
         month_label: monthLabel,
+        month_label_en: monthLabelEn,
         month_cost: month.month_cost,
         saved,
         saved_pct: savedPct,

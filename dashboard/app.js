@@ -10,8 +10,8 @@ let pollTimer = null;           // 轮询定时器句柄
 let sessionStartTime = Date.now(); // 会话开始时间（页面加载时）
 let lastRecordsFound = 0;       // 上次扫描发现的记录数（用于检测首条数据）
 let scanCompleteShown = false;   // 扫描完成提示是否已显示过
-let currentMode = 'log_observer'; // 当前数据采集模式
-let currentSkin = localStorage.getItem('pintoken-skin') || 'terminal'; // 当前分享卡片皮肤
+let currentMode = 'log_observer'; // 当前监控模式
+let currentSkin = localStorage.getItem('pintoken-skin') || 'thermal'; // 当前分享卡片皮肤
 let shareData = null;             // 缓存分享卡片数据
 
 // ===== 格式化工具函数 =====
@@ -641,6 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = window.generateShareCard(shareData, currentSkin);
     canvas.style.width = '100%';
     canvas.style.maxWidth = '420px';
+    canvas.style.height = 'auto';
     const preview = document.getElementById('sharePreview');
     preview.innerHTML = '';
     preview.appendChild(canvas);

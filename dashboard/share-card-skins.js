@@ -1,105 +1,115 @@
 /**
- * PinToken 分享卡片 — 5 套皮肤配置
+ * PinToken 分享卡片 — 5 套收据风格皮肤配置
  * 供 share-card.js 渲染引擎使用
  */
 
 const SHARE_SKINS = {
-  terminal: {
-    name: 'Terminal',
-    nameZh: '终端暗夜',
-    bg: { type: 'solid', color: '#0d1117', glow: { color: '#FF6B35', opacity: 0.08, y: 200, radius: 400 } },
-    font: { primary: 'monospace', display: 'monospace' },
+  /* ── 1. 热敏纸收据 ─────────────────────────────────── */
+  thermal: {
+    name: 'Thermal',
+    nameZh: '热敏纸',
+    bg: { color: '#faf6f0' },
+    font: { primary: 'monospace', display: 'monospace', weight: 'bold' },
     colors: {
-      text: '#e6edf3',
-      textDim: '#8b949e',
-      accent: '#FF6B35',
-      saving: '#27c93f',
-      barFill: '#FF6B35',
-      barBg: '#21262d',
-      cardBg: 'rgba(255,255,255,0.03)',
-      border: '#30363d',
+      text: '#2a2a2a',
+      textDim: '#888888',
+      accent: '#2a2a2a',
+      highlight: '#2a2a2a',
+      line: '#cccccc',
+      brand: '#FF6B35',
     },
-    features: { trafficLights: true, borderStyle: 'solid' },
+    features: {
+      tearEdge: true,
+      dashedDivider: true,
+      paperShadow: true,
+      paperNoise: true,
+    },
   },
 
+  /* ── 2. 霓虹收据 ───────────────────────────────────── */
   neon: {
     name: 'Neon',
-    nameZh: '霓虹闪烁',
-    bg: { type: 'solid', color: '#000000', glow: { color: '#FF6B35', opacity: 0.15, y: 540, radius: 500 } },
-    font: { primary: 'sans-serif', display: 'sans-serif' },
+    nameZh: '霓虹',
+    bg: { color: '#0a0a0a' },
+    font: { primary: 'sans-serif', display: 'sans-serif', weight: 'bold' },
     colors: {
       text: '#ffffff',
-      textDim: '#888888',
+      textDim: '#666666',
       accent: '#FF6B35',
-      saving: '#00ff88',
-      barFill: '#FF6B35',
-      barBg: '#1a1a1a',
-      cardBg: 'rgba(255,255,255,0.04)',
-      border: '#333333',
+      highlight: '#FF6B35',
+      line: '#333333',
+      brand: '#FF6B35',
+      glow: '#FF6B35',
+      glowAlt: '#27c93f',
     },
-    features: { glow: true, borderStyle: 'none' },
+    features: {
+      neonGlow: true,
+      dashedDivider: false,
+    },
   },
 
+  /* ── 3. 碳纤维发票 ─────────────────────────────────── */
+  carbon: {
+    name: 'Carbon',
+    nameZh: '碳纤维',
+    bg: { color: '#1a1a1a' },
+    font: { primary: 'sans-serif', display: 'sans-serif', weight: 'bold' },
+    colors: {
+      text: '#e0e0e0',
+      textDim: '#777777',
+      accent: '#FF6B35',
+      highlight: '#FF6B35',
+      line: '#333333',
+      brand: '#FF6B35',
+    },
+    features: {
+      carbonTexture: true,
+      dashedDivider: false,
+      thinLines: true,
+    },
+  },
+
+  /* ── 4. 复古终端 ───────────────────────────────────── */
+  retro: {
+    name: 'Retro',
+    nameZh: '复古终端',
+    bg: { color: '#0c1a0c' },
+    font: { primary: 'monospace', display: 'monospace', weight: 'bold' },
+    colors: {
+      text: '#33ff33',
+      textDim: '#1a8a1a',
+      accent: '#33ff33',
+      highlight: '#33ff33',
+      line: '#1a8a1a',
+      brand: '#33ff33',
+    },
+    features: {
+      scanlines: true,
+      dashedDivider: true,
+      cursor: true,
+      crtGlow: true,
+    },
+  },
+
+  /* ── 5. 极简收据 ───────────────────────────────────── */
   minimal: {
     name: 'Minimal',
-    nameZh: '极简白',
-    bg: { type: 'split', topColor: '#fafafa', bottomColor: '#f0f0f0', splitY: 720 },
-    font: { primary: 'sans-serif', display: 'sans-serif' },
+    nameZh: '极简',
+    bg: { color: '#ffffff' },
+    font: { primary: 'sans-serif', display: 'sans-serif', weight: '800' },
     colors: {
-      text: '#1a1a1a',
-      textDim: '#888888',
+      text: '#111111',
+      textDim: '#999999',
       accent: '#FF6B35',
-      saving: '#16a34a',
-      barFill: '#FF6B35',
-      barBg: '#e5e5e5',
-      cardBg: 'rgba(0,0,0,0.02)',
-      border: '#e0e0e0',
+      highlight: '#111111',
+      line: '#e0e0e0',
+      brand: '#FF6B35',
     },
-    features: { roundedBars: true, borderStyle: 'none' },
-  },
-
-  gradient: {
-    name: 'Gradient',
-    nameZh: '渐变冲击',
-    bg: {
-      type: 'gradient',
-      stops: [
-        { pos: 0, color: '#1a0a2e' },
-        { pos: 0.5, color: '#2d1b69' },
-        { pos: 1, color: '#FF6B35' },
-      ],
-      angle: 135,
+    features: {
+      dashedDivider: false,
+      thinLines: true,
+      ultraLight: true,
     },
-    font: { primary: 'sans-serif', display: 'sans-serif' },
-    colors: {
-      text: '#ffffff',
-      textDim: 'rgba(255,255,255,0.6)',
-      accent: '#ffffff',
-      saving: '#ffffff',
-      barFill: '#ffffff',
-      barBg: 'rgba(255,255,255,0.15)',
-      cardBg: 'rgba(255,255,255,0.08)',
-      border: 'rgba(255,255,255,0.15)',
-    },
-    features: { glassCard: true, borderStyle: 'none' },
-  },
-
-  blueprint: {
-    name: 'Blueprint',
-    nameZh: '工程蓝图',
-    bg: { type: 'solid', color: '#0a192f', grid: { size: 40, color: '#172a45', opacity: 0.3 } },
-    font: { primary: 'monospace', display: 'monospace' },
-    colors: {
-      text: '#ccd6f6',
-      textDim: '#8892b0',
-      accent: '#64ffda',
-      saving: '#64ffda',
-      barFill: '#FF6B35',
-      barBg: '#172a45',
-      cardBg: 'rgba(100,255,218,0.03)',
-      border: '#233554',
-    },
-    features: { dashedBorder: true, outlineBars: true, borderStyle: 'dashed' },
   },
 };
 
