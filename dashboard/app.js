@@ -52,39 +52,6 @@ function formatTime(ms) {
   return `${minutes}m`;
 }
 
-// ===== 模式指示器 =====
-
-/**
- * 获取当前模式并更新顶栏指示器 + 底部模式信息面板
- */
-async function updateModeIndicator() {
-  try {
-    const res = await fetch('/api/mode');
-    const mode = await res.json();
-    const indicator = document.getElementById('modeIndicator');
-    const label = document.getElementById('modeLabel');
-
-    if (mode.proxy?.active) {
-      indicator.className = 'mode-indicator proxy';
-      label.textContent = 'Proxy 模式';
-      currentMode = 'proxy';
-
-      // 更新底部模式信息面板
-      const cardProxy = document.getElementById('modeCardProxy');
-      const cardObserver = document.getElementById('modeCardObserver');
-      if (cardProxy) {
-        cardProxy.classList.add('active');
-        document.getElementById('proxyModeStatus').textContent = '运行中';
-      }
-    } else {
-      indicator.className = 'mode-indicator log-observer';
-      label.textContent = 'Log Observer';
-      currentMode = 'log_observer';
-    }
-  } catch {
-    // 静默失败
-  }
-}
 
 /**
  * 辅助函数：为估算值添加精度标记
@@ -201,8 +168,7 @@ function renderTable(rows) {
     tr.innerHTML = `<td colspan="6">
       <div class="empty-state-enhanced" role="status">
         <div class="empty-state-title">未检测到 Claude Code 日志</div>
-        <div class="empty-state-desc">启动 Claude Code 后数据将自动出现。如需追踪其他工具，请启用代理模式。</div>
-        <button class="empty-state-btn" onclick="document.getElementById('proxyGuide').scrollIntoView({behavior:'smooth'})">了解代理模式</button>
+        <div class="empty-state-desc">启动 Claude Code 后数据将自动出现</div>
       </div>
     </td>`;
     tbody.appendChild(tr);
@@ -297,34 +263,6 @@ function updatePeakStatus(peak) {
   document.getElementById('statusDesc').textContent = msg.desc;
 }
 
-// ===== 订阅对比卡片 =====
-
-/**
- * 拉取 /api/subscription 并更新第 5 张卡片
- */
-async function fetchSubscription() {
-  try {
-    const res = await fetch('/api/subscription');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-
-    const diff = data.diff || 0;
-    const savedEl = document.getElementById('subSaved');
-    const detailEl = document.getElementById('subDetail');
-
-    if (diff > 0) {
-      savedEl.textContent = '$' + diff.toFixed(2);
-      savedEl.style.color = 'var(--green)';
-      detailEl.textContent = '省 ' + ((diff / data.month_cost) * 100).toFixed(0) + '%';
-    } else {
-      savedEl.textContent = '$' + Math.abs(diff).toFixed(2);
-      savedEl.style.color = 'var(--yellow)';
-      detailEl.textContent = '用量较少';
-    }
-  } catch (err) {
-    console.warn('[PinToken] subscription fetch failed:', err.message);
-  }
-}
 
 // ===== Provider 过滤器交互 =====
 
@@ -394,9 +332,6 @@ async function fetchScanStatus() {
       progressEl.classList.add('hidden');
     }
 
-    // 更新代理引导卡状态
-    updateProxyGuide(data.proxyActive);
-
     // 检测首条数据到达：触发 empty state → table 过渡
     if (data.recordsFound > 0 && lastRecordsFound === 0) {
       fetchRequests(currentProvider);
@@ -408,26 +343,6 @@ async function fetchScanStatus() {
   }
 }
 
-/**
- * 更新代理引导卡状态
- * @param {boolean} proxyActive
- */
-function updateProxyGuide(proxyActive) {
-  const guideEl = document.getElementById('proxyGuide');
-  const activeEl = document.getElementById('proxyActive');
-
-  if (proxyActive) {
-    guideEl.style.display = 'none';
-    activeEl.style.display = '';
-  } else {
-    // 检查用户是否已关闭引导卡
-    const dismissed = localStorage.getItem('pintoken-guide-dismissed');
-    if (dismissed === '1') {
-      guideEl.style.display = 'none';
-    }
-    activeEl.style.display = 'none';
-  }
-}
 
 // ===== 轮询刷新 =====
 
@@ -436,7 +351,6 @@ function updateProxyGuide(proxyActive) {
  */
 function refresh() {
   fetchSummary();
-  fetchSubscription();
   fetchRequests(currentProvider);
   fetchScanStatus();
 }
@@ -594,29 +508,8 @@ function renderModelChart(data) {
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();           // 绑定 Tab 切换
   initFilterButtons();  // 绑定过滤器按钮
-  updateModeIndicator(); // 获取并显示当前模式
   refresh();            // 立即首次加载
   startPolling();       // 开始轮询
-
-  // 代理引导卡：关闭按钮
-  document.getElementById('proxyGuideClose').addEventListener('click', () => {
-    document.getElementById('proxyGuide').style.display = 'none';
-    localStorage.setItem('pintoken-guide-dismissed', '1');
-  });
-
-  // 代理引导卡：复制命令按钮
-  document.getElementById('proxyGuideCopy').addEventListener('click', () => {
-    const btn = document.getElementById('proxyGuideCopy');
-    navigator.clipboard.writeText('pintoken setup --proxy').then(() => {
-      btn.textContent = '✓ 已复制';
-      setTimeout(() => { btn.textContent = '复制'; }, 1500);
-    });
-  });
-
-  // 首次加载时检查引导卡是否已关闭
-  if (localStorage.getItem('pintoken-guide-dismissed') === '1') {
-    document.getElementById('proxyGuide').style.display = 'none';
-  }
 
   // 立即获取一次扫描状态
   fetchScanStatus();
