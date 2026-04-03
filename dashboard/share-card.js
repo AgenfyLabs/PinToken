@@ -235,37 +235,30 @@ function drawRoundRect(ctx, x, y, w, h, r) {
  * @returns {number} 格子区域总高度（含日期标签）
  */
 function drawActivityGrid(ctx, dailyActivity, offColor, onColor, startX, startY, areaW, skin, skinName) {
-  // 构建本月完整日历（补齐没有数据的天）
+  // 构建本月完整日历
   var now = new Date();
   var year = now.getFullYear();
   var month = now.getMonth();
   var daysInMonth = new Date(year, month + 1, 0).getDate();
   var today = now.getDate();
 
-  // 把 dailyActivity 转成 date → tokens 的 map
+  // dailyActivity → date map
   var actMap = {};
   (dailyActivity || []).forEach(function(d) {
     actMap[d.date] = d.tokens || 0;
   });
 
-  // 生成本月每天的数据
   var days = [];
   for (var d = 1; d <= daysInMonth; d++) {
     var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-    days.push({
-      day: d,
-      tokens: actMap[dateStr] || 0,
-      isFuture: d > today,
-    });
+    days.push({ day: d, tokens: actMap[dateStr] || 0, isFuture: d > today });
   }
 
-  // 7 列排列（一周 7 天），行数自动计算
+  // 7 列，格子撑满可用宽度
   var cols = 7;
   var rows = Math.ceil(daysInMonth / cols);
-  var gap = 4;
-  var cellSize = Math.min(28, Math.floor((areaW - (cols - 1) * gap) / cols));
-
-  // 总宽度居中
+  var gap = 6;
+  var cellSize = Math.floor((areaW - (cols - 1) * gap) / cols);
   var totalW = cols * cellSize + (cols - 1) * gap;
   var offsetX = startX + Math.floor((areaW - totalW) / 2);
 
@@ -278,56 +271,60 @@ function drawActivityGrid(ctx, dailyActivity, offColor, onColor, startX, startY,
     ctx.save();
 
     if (days[i].isFuture) {
-      // 未来的天：虚线边框，不填充
+      // 未来：虚线框
       ctx.strokeStyle = offColor;
-      ctx.lineWidth = 0.5;
-      ctx.setLineDash([2, 2]);
-      drawRoundRect(ctx, cx, cy, cellSize, cellSize, 4);
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      drawRoundRect(ctx, cx, cy, cellSize, cellSize, 6);
       ctx.stroke();
       ctx.setLineDash([]);
     } else if (days[i].tokens > 0) {
       // 有活动：亮色
       ctx.fillStyle = onColor;
-      // 霓虹皮肤：亮格子加 glow
-      if (skinName === 'neon') {
-        ctx.shadowColor = onColor;
-        ctx.shadowBlur = 6;
-      }
-      drawRoundRect(ctx, cx, cy, cellSize, cellSize, 4);
+      if (skinName === 'neon') { ctx.shadowColor = onColor; ctx.shadowBlur = 8; }
+      drawRoundRect(ctx, cx, cy, cellSize, cellSize, 6);
       ctx.fill();
     } else {
       // 无活动：暗色
       ctx.fillStyle = offColor;
-      drawRoundRect(ctx, cx, cy, cellSize, cellSize, 4);
+      drawRoundRect(ctx, cx, cy, cellSize, cellSize, 6);
       ctx.fill();
     }
 
-    // 在格子内显示日期数字（小字）
+    // 日期数字
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
-    ctx.font = '10px ' + skin.font.primary;
-    ctx.fillStyle = days[i].tokens > 0 ? (skinName === 'minimal' ? '#fff' : skin.colors.text) : skin.colors.textDim;
+    ctx.font = 'bold 16px ' + skin.font.primary;
+    // 亮格子上用深色/白色文字，暗格子用 dim 色
+    if (days[i].isFuture) {
+      ctx.fillStyle = skin.colors.textDim;
+    } else if (days[i].tokens > 0) {
+      // 亮背景上的文字颜色
+      ctx.fillStyle = skinName === 'minimal' || skinName === 'thermal' ? '#ffffff' : skin.colors.text;
+    } else {
+      ctx.fillStyle = skin.colors.textDim;
+    }
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(String(days[i].day), cx + cellSize / 2, cy + cellSize / 2);
+    ctx.fillText(String(days[i].day), cx + cellSize / 2, cy + cellSize / 2 + 1);
 
     ctx.restore();
   }
 
-  // 底部统计：X 天活跃 / Y 天
+  // 底部统计
   var activeDays = days.filter(function(d) { return !d.isFuture && d.tokens > 0; }).length;
   var pastDays = days.filter(function(d) { return !d.isFuture; }).length;
   var totalH = rows * (cellSize + gap);
-  var statY = startY + totalH + 12;
+  var statY = startY + totalH + 16;
 
   ctx.save();
-  ctx.font = '13px ' + skin.font.primary;
+  ctx.font = 'bold 16px ' + skin.font.primary;
   ctx.fillStyle = skin.colors.textDim;
   ctx.textAlign = 'center';
   ctx.fillText(activeDays + ' / ' + pastDays + ' 天活跃', startX + areaW / 2, statY);
   ctx.restore();
 
-  return totalH + 30; // 格子高度 + 统计文字
+  return totalH + 36;
 }
 
 /* ============================================================
@@ -426,83 +423,69 @@ function generateShareCard(data, skinName) {
   /* ==========================================================
    *  区域 2：TODAY — 今日 output tokens（第一视觉焦点）
    * ========================================================== */
-  y = 160;
+  y = 170;
 
   // 小标签
-  ctx.font = fp(13);
+  ctx.font = fp(14);
   ctx.fillStyle = c.textDim;
   ctx.textAlign = 'left';
-  if (isRetro) {
-    ctx.fillText('> TODAY', PAD, y);
-  } else {
-    ctx.fillText('TODAY', PAD, y);
-  }
+  ctx.fillText(isRetro ? '> TODAY' : 'TODAY', PAD, y);
 
   // 超大今日 output tokens 数字
-  y = 230;
+  y += 80;
   var todayStr = fmtTokens(data.today_output_tokens || 0);
 
   if (isNeon) {
-    ctx.font = fd(80);
+    ctx.font = fd(96);
     ctx.fillStyle = c.highlight;
-    ctx.textAlign = 'left';
     drawGlowText(ctx, todayStr, PAD, y, c.glow, 50);
   } else if (isMinimal) {
-    ctx.font = '800 84px ' + ff.display;
+    ctx.font = '800 100px ' + ff.display;
     ctx.fillStyle = c.highlight;
-    ctx.textAlign = 'left';
     ctx.fillText(todayStr, PAD, y);
   } else {
-    ctx.font = fd(80);
+    ctx.font = fd(96);
     ctx.fillStyle = c.highlight;
-    ctx.textAlign = 'left';
     ctx.fillText(todayStr, PAD, y);
   }
 
   // "output tokens" 标注
-  y = 260;
-  ctx.font = fp(16);
+  y += 30;
+  ctx.font = fp(18);
   ctx.fillStyle = c.textDim;
   ctx.fillText('output tokens', PAD, y);
 
   /* ==========================================================
    *  区域 3：THIS MONTH — 本月累计 tokens + 花费
    * ========================================================== */
-  y = 300;
+  y += 50;
 
   // 小标签
-  ctx.font = fp(13);
+  ctx.font = fp(14);
   ctx.fillStyle = c.textDim;
-  if (isRetro) {
-    ctx.fillText('> THIS MONTH', PAD, y);
-  } else {
-    ctx.fillText('THIS MONTH', PAD, y);
-  }
+  ctx.fillText(isRetro ? '> THIS MONTH' : 'THIS MONTH', PAD, y);
 
   // 大号本月 tokens 数字
-  y = 360;
+  y += 64;
   var monthStr = fmtTokens(data.month_tokens || 0);
 
   if (isNeon) {
-    ctx.font = fd(56);
+    ctx.font = fd(64);
     ctx.fillStyle = c.highlight;
-    ctx.textAlign = 'left';
     drawGlowText(ctx, monthStr, PAD, y, c.glow, 35);
   } else if (isMinimal) {
-    ctx.font = '800 60px ' + ff.display;
+    ctx.font = '800 68px ' + ff.display;
     ctx.fillStyle = c.highlight;
-    ctx.textAlign = 'left';
     ctx.fillText(monthStr, PAD, y);
   } else {
-    ctx.font = fd(56);
+    ctx.font = fd(64);
     ctx.fillStyle = c.highlight;
-    ctx.textAlign = 'left';
     ctx.fillText(monthStr, PAD, y);
   }
 
   // "total tokens · $549" 标注
-  y = 392;
-  ctx.font = fp(16);
+  y += 30;
+  ctx.font = fp(18);
   ctx.fillStyle = c.textDim;
   var monthNote = 'total tokens';
   if (data.month_cost) {
@@ -511,25 +494,21 @@ function generateShareCard(data, skinName) {
   ctx.fillText(monthNote, PAD, y);
 
   /* ── 分隔 ── */
-  y = 430;
+  y += 36;
   drawDashedLine(ctx, y, PAD, SIZE, skin);
 
   /* ==========================================================
-   *  区域 4：ACTIVITY — 30 天热力图
+   *  区域 4：ACTIVITY — 本月活动格子
    * ========================================================== */
-  y = 460;
+  y += 28;
 
   // 小标签
-  ctx.font = fp(13);
+  ctx.font = fp(14);
   ctx.fillStyle = c.textDim;
-  if (isRetro) {
-    ctx.fillText('> ACTIVITY', PAD, y);
-  } else {
-    ctx.fillText('ACTIVITY', PAD, y);
-  }
+  ctx.fillText(isRetro ? '> ACTIVITY' : 'ACTIVITY', PAD, y);
 
-  // 绘制活动格子（GitHub 风格：有用=亮，没用=暗）
-  var gridStartY = y + 20;
+  // 绘制活动格子
+  var gridStartY = y + 24;
   var gridOffColor = skin.heatmap ? skin.heatmap[0] : '#333';
   var gridOnColor = skin.heatmap ? skin.heatmap[4] : '#bbb';
   var gridH = drawActivityGrid(
@@ -542,7 +521,7 @@ function generateShareCard(data, skinName) {
   /* ==========================================================
    *  区域 5：模型分布 — 一行文字
    * ========================================================== */
-  y = gridStartY + gridH + 16;
+  y = gridStartY + gridH + 20;
 
   var models = (data.top_models || []).slice(0, 4);
   if (models.length > 0) {
