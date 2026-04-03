@@ -1,0 +1,27 @@
+name: Gigiqi Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  pull-requests: write
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret Scan (TruffleHog)
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+        continue-on-error: true
+      - name: Post Review as gigiqi2016
+        env:
+          GH_TOKEN: ${{ secrets.GIGIQI_BOT_PAT }}
+        run: |
+          gh pr review ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --comment \
+            --body "Gigiqi Review 扫描完成，请查看 Files Changed 中的行内评论。"

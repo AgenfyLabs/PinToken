@@ -1,0 +1,8 @@
+name: Gigiqi Auto-Fix
+on:
+  pull_request_review:
+    types: [submitted]
+jobs:
+  call-autofix:
+    uses: AgenfyLabs/.github/.github/workflows/claude-autofix.yml@main
+    secrets: inherit
