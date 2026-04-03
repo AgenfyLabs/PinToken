@@ -79,38 +79,39 @@ async function fetchSummary() {
     const isEstimated = currentMode === 'log_observer';
 
     // 今日 Token 用量
+    const todayTokens = data.today_tokens || 0;
     document.getElementById('todayTokens').innerHTML =
-      addEstimatedMark(formatNumber(data.today_tokens), isEstimated);
+      addEstimatedMark(formatNumber(todayTokens), isEstimated);
+    document.getElementById('yesterdayTokens').textContent =
+      formatNumber(data.yesterday_tokens);
 
     // 5 小时窗口占比估算（Max 5x ≈ 88K output tokens / 5h 窗口）
-    // 用会话时长内的 token 消耗来估算窗口使用率
-    const WINDOW_LIMIT = 88000; // Max 5x 估算上限（output tokens）
-    const sessionHours = (data.session_seconds || 0) / 3600;
-    // 用今日 token 作为近似（实际应该是窗口内，但日志无法精确区分窗口）
-    const todayTokens = data.today_tokens || 0;
+    const WINDOW_LIMIT = 88000;
     const windowPct = Math.min(Math.round((todayTokens / WINDOW_LIMIT) * 100), 999);
     document.getElementById('windowPct').textContent = windowPct + '%';
 
-    // 消耗速度判断：基于每小时 token 消耗率
-    // 慢 < 10K/h，中等 10K-30K/h，快 > 30K/h
+    // 消耗速度：基于每小时 token 消耗率
+    const sessionHours = (data.session_seconds || 0) / 3600;
     const tokensPerHour = sessionHours > 0.1 ? todayTokens / sessionHours : 0;
-    let burnLabel = '—';
-    let burnColor = '';
-    if (tokensPerHour > 0) {
-      if (tokensPerHour > 30000) {
-        burnLabel = '🔴 快';
-        burnColor = 'var(--red)';
-      } else if (tokensPerHour > 10000) {
-        burnLabel = '🟡 中等';
-        burnColor = 'var(--yellow)';
-      } else {
-        burnLabel = '🟢 慢';
-        burnColor = 'var(--green)';
-      }
-    }
     const burnEl = document.getElementById('burnRate');
-    burnEl.textContent = burnLabel;
-    if (burnColor) burnEl.style.color = burnColor;
+    const burnSubEl = document.getElementById('burnRateSub');
+    if (tokensPerHour > 30000) {
+      burnEl.textContent = '快';
+      burnEl.style.color = 'var(--red)';
+      burnSubEl.textContent = formatNum(Math.round(tokensPerHour)) + ' tokens/h';
+    } else if (tokensPerHour > 10000) {
+      burnEl.textContent = '中等';
+      burnEl.style.color = 'var(--yellow)';
+      burnSubEl.textContent = formatNum(Math.round(tokensPerHour)) + ' tokens/h';
+    } else if (tokensPerHour > 0) {
+      burnEl.textContent = '慢';
+      burnEl.style.color = 'var(--green)';
+      burnSubEl.textContent = formatNum(Math.round(tokensPerHour)) + ' tokens/h';
+    } else {
+      burnEl.textContent = '—';
+      burnEl.style.color = '';
+      burnSubEl.textContent = '等待数据';
+    }
 
     // 今日花费
     document.getElementById('todayCost').innerHTML =
@@ -125,17 +126,6 @@ async function fetchSummary() {
 
     // 高峰状态
     updatePeakStatus(data.peak);
-
-    // 累计节省
-    document.getElementById('totalSaved').textContent =
-      formatCost(data.total_saved);
-    // 计算节省百分比
-    const totalBaseline = data.today_cost + data.total_saved;
-    const pct = totalBaseline > 0
-      ? (data.total_saved / totalBaseline * 100).toFixed(1) + '%'
-      : '—';
-    document.getElementById('savedPercent').textContent =
-      pct !== '—' ? '↑ 省 ' + pct : '—';
 
   } catch (err) {
     // 静默失败，保留旧数据

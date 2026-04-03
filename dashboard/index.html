@@ -52,31 +52,35 @@
       <div class="card card-highlight">
         <div class="card-label">今日 Token 用量</div>
         <div class="card-value" id="todayTokens">—</div>
-        <div class="card-sub">
-          窗口占比：<span id="windowPct">—</span>
-          · 速度：<span id="burnRate">—</span>
-        </div>
+        <div class="card-sub">昨日：<span id="yesterdayTokens">—</span></div>
       </div>
 
-      <!-- 卡片2：今日花费 -->
+      <!-- 卡片2：消耗占比（5h 窗口估算） -->
+      <div class="card">
+        <div class="card-label">消耗占比</div>
+        <div class="card-value card-value-orange" id="windowPct">—</div>
+        <div class="card-sub">5h 窗口估算</div>
+      </div>
+
+      <!-- 卡片3：消耗速度 -->
+      <div class="card">
+        <div class="card-label">消耗速度</div>
+        <div class="card-value" id="burnRate">—</div>
+        <div class="card-sub" id="burnRateSub">—</div>
+      </div>
+
+      <!-- 卡片4：今日花费 -->
       <div class="card">
         <div class="card-label">今日花费</div>
         <div class="card-value card-value-orange" id="todayCost">—</div>
         <div class="card-sub">昨日：<span id="yesterdayCost">—</span></div>
       </div>
 
-      <!-- 卡片3：本次会话时长 -->
+      <!-- 卡片5：本次会话时长 -->
       <div class="card">
         <div class="card-label">本次会话时长</div>
         <div class="card-value" id="sessionTime">—</div>
         <div class="card-sub">当前活跃会话</div>
-      </div>
-
-      <!-- 卡片4：累计节省 -->
-      <div class="card">
-        <div class="card-label">累计节省</div>
-        <div class="card-value card-value-green" id="totalSaved">—</div>
-        <div class="card-sub">节省比例：<span id="savedPercent">—</span></div>
       </div>
 
     </section>
