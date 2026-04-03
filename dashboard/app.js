@@ -87,7 +87,8 @@ async function fetchSummary() {
 
     // 5 小时窗口占比估算（Max 5x ≈ 88K output tokens / 5h 窗口）
     const WINDOW_LIMIT = 88000;
-    const windowPct = Math.min(Math.round((todayTokens / WINDOW_LIMIT) * 100), 999);
+    const outputTokens = data.today_output_tokens || 0;
+    const windowPct = Math.min(Math.round((outputTokens / WINDOW_LIMIT) * 100), 999);
     document.getElementById('windowPct').textContent = windowPct + '%';
 
     // 消耗速度：基于每小时 token 消耗率

@@ -163,6 +163,7 @@ export function createStore(dbPath) {
     const stmtDay = db.prepare(`
       SELECT
         COALESCE(SUM(input_tokens + output_tokens + cache_read_tokens + cache_write_tokens), 0) AS tokens,
+        COALESCE(SUM(output_tokens), 0) AS output_tokens,
         COALESCE(SUM(cost_usd), 0) AS cost,
         COUNT(*) AS requests
       FROM requests
@@ -179,6 +180,7 @@ export function createStore(dbPath) {
 
     return {
       today_tokens: todayRow.tokens,
+      today_output_tokens: todayRow.output_tokens,
       today_cost: todayRow.cost,
       today_requests: todayRow.requests,
       yesterday_tokens: yesterdayRow.tokens,
